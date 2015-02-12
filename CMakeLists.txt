@@ -28,32 +28,32 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES puma_motor_driver
-#  CATKIN_DEPENDS roscpp sensor_msgs serial
+  INCLUDE_DIRS include
+  LIBRARIES puma_motor_driver
+  CATKIN_DEPENDS roscpp sensor_msgs serial
 #  DEPENDS system_lib
 )
 
 include_directories(
+  include
   ${catkin_INCLUDE_DIRS}
 )
 
-## Declare a cpp library
-# add_library(puma_motor_driver
-#   src/${PROJECT_NAME}/puma_motor_driver.cpp
-# )
+add_library(puma_motor_driver
+  src/driver.cpp
+  src/serial_gateway.cpp
+  #src/socketcan_gateway.cpp
+)
+target_link_libraries(puma_motor_driver
+  ${catkin_LIBRARIES}
+)
 
-## Declare a cpp executable
-# add_executable(puma_motor_driver_node src/puma_motor_driver_node.cpp)
+add_executable(puma_multi_controller_node src/multi_controller_node.cpp)
 
-## Add cmake target dependencies of the executable/library
-## as an example, message headers may need to be generated before nodes
-# add_dependencies(puma_motor_driver_node puma_motor_driver_generate_messages_cpp)
-
-## Specify libraries to link a library or executable target against
-# target_link_libraries(puma_motor_driver_node
-#   ${catkin_LIBRARIES}
-# )
+target_link_libraries(puma_multi_controller_node
+  puma_motor_driver
+  ${catkin_LIBRARIES}
+)
 
 #############
 ## Install ##
