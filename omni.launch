@@ -3,7 +3,7 @@
     <param name="autorepeat_rate" value="10" />
   </node>
 
-  <node pkg="puma_motor_driver" name="omni_joy" type="omni_joy" />
+  <node pkg="puma_motor_driver" name="joy_omni" type="joy_omni" />
 
   <node pkg="puma_motor_driver" name="puma_multi_controller_node" type="puma_multi_controller_node">
     <param name="port" value="/dev/ttyUSB0" />
