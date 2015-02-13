@@ -21,35 +21,28 @@ OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTE
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef PUMA_MOTOR_DRIVER_DRIVER_H
-#define PUMA_MOTOR_DRIVER_DRIVER_H
+#ifndef PUMA_MOTOR_DRIVER_MESSAGE_H
+#define PUMA_MOTOR_DRIVER_MESSAGE_H
 
-#include <string>
+#include "puma_motor_driver/can_proto.h"
+
+#include <stdint.h>
+
 
 namespace puma_motor_driver
 {
 
-class Gateway;
-
-class Driver
+struct Message
 {
-public:
-  Driver(Gateway& gateway, uint8_t device_number, std::string device_name)
-    : gateway_(gateway), device_number_(device_number), device_name_(device_name) {}
+  uint8_t data[8];
+  uint32_t id;
+  uint8_t len;
 
-  void spinOnce();
-
-  void voltageSet(float cmd);
-  void speedSet(float cmd);
-  void currentSet(float cmd);
-  void positionSet(float cmd);
-
-private:
-  Gateway& gateway_;
-  uint8_t device_number_;
-  std::string device_name_;
+  Message() : id(0), len(0)
+  {
+  }
 };
 
-}
+}  // puma_motor_driver
 
-#endif  // PUMA_MOTOR_DRIVER_DRIVER_H
+#endif  // PUMA_MOTOR_DRIVER_MESSAGE_H

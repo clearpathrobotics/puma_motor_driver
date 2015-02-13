@@ -22,14 +22,15 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCL
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "puma_motor_driver/protocol.h"
+#include "puma_motor_driver/gateway.h"
+#include "puma_motor_driver/message.h"
 #include "serial/serial.h"
 
 
 namespace puma_motor_driver
 {
 
-class SerialGateway : public protocol::Gateway
+class SerialGateway : public Gateway
 {
 public:
   SerialGateway(serial::Serial& serial) : serial_(serial) {
@@ -41,8 +42,8 @@ public:
   virtual bool connect();
   virtual bool isConnected();
 
-  virtual void send(const protocol::Message& msg);
-  virtual bool recv(protocol::Message* msg, uint32_t timeout_millis);
+  virtual void send(const Message& msg);
+  virtual bool recv(Message* msg, uint32_t timeout_millis);
 
 private:
   serial::Serial& serial_;

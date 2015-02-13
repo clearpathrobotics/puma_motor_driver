@@ -23,7 +23,8 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 */
 
 #include "puma_motor_driver/driver.h"
-#include "puma_motor_driver/protocol.h"
+#include "puma_motor_driver/gateway.h"
+#include "puma_motor_driver/message.h"
 
 
 namespace puma_motor_driver
@@ -35,9 +36,9 @@ void Driver::spinOnce()
 
 }
 
-void Driver::velocitySet(float cmd)
+void Driver::voltageSet(float cmd)
 {
-  protocol::Message driver_msg;
+  Message driver_msg;
   driver_msg.id = LM_API_VOLT_SET | device_number_;
   driver_msg.len = 2;
 

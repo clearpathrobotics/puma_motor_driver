@@ -35,7 +35,7 @@ class MultiControllerNode
 public:
 
   MultiControllerNode(ros::NodeHandle& nh, ros::NodeHandle& nh_private,
-                      puma_motor_driver::protocol::Gateway& gateway) :
+                      puma_motor_driver::Gateway& gateway) :
     gateway_(gateway)
   {
     drivers_.push_back(puma_motor_driver::Driver(gateway_, 2, "left"));
@@ -50,7 +50,7 @@ public:
   {
     for (int joint = 0; joint < 4; joint++)
     {
-      drivers_[joint].velocitySet(cmd_msg->velocity[joint]);
+      drivers_[joint].voltageSet(cmd_msg->velocity[joint]);
     }
   }
 
@@ -85,7 +85,7 @@ public:
   }
 
 private:
-  puma_motor_driver::protocol::Gateway& gateway_;
+  puma_motor_driver::Gateway& gateway_;
   std::vector<puma_motor_driver::Driver> drivers_;
 
   ros::Subscriber cmd_sub_;

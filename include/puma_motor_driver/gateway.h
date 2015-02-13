@@ -21,8 +21,11 @@ OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTE
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+#ifndef PUMA_MOTOR_DRIVER_GATEWAY_H
+#define PUMA_MOTOR_DRIVER_GATEWAY_H
 
 #include "puma_motor_driver/can_proto.h"
+#include "puma_motor_driver/message.h"
 
 #include <stdint.h>
 
@@ -30,35 +33,39 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 namespace puma_motor_driver
 {
 
-namespace protocol
-{
-
-struct Message
-{
-  uint8_t data[8];
-  uint32_t id;
-  uint8_t len;
-};
-
-
 class Gateway
 {
 public:
   virtual bool connect()=0;
   virtual bool isConnected()=0;
 
+  /**
+   * Creates and immediately sends a system heartbeat message, which
+   * makes all controllers on the bus show solid amber rather than
+   * flashing.
+   */
   void heartbeat()
   {
-    protocol::Message heartbeat_msg;
+    Message heartbeat_msg;
     heartbeat_msg.id = CAN_MSGID_API_HEARTBEAT;
     heartbeat_msg.len = 0;
     send(heartbeat_msg);
   }
 
+  /**
+   * Send the specified message on the bus.
+   */
   virtual void send(const Message& msg)=0;
+
+  /**
+   * Receive the next available message from the bus, blocking for
+   * timeout_millis if nonzero.
+   *
+   * \return True if a message was returned false if timeout occurred.
+   */
   virtual bool recv(Message* msg, uint32_t timeout_millis)=0;
 };
 
-}  // protocol
-
 }  // puma_motor_driver
+
+#endif  // PUMA_MOTOR_DRIVER_GATEWAY_H

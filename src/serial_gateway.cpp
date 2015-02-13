@@ -51,7 +51,7 @@ bool SerialGateway::isConnected()
   return serial_.isOpen();
 }
 
-void SerialGateway::send(const protocol::Message& msg)
+void SerialGateway::send(const Message& msg)
 {
   ROS_DEBUG_NAMED("serial", "Sending ID 0x%08x, data (%d)", msg.id, msg.len);
 
@@ -107,7 +107,7 @@ void SerialGateway::send(const protocol::Message& msg)
   }
 }
 
-bool SerialGateway::recv(protocol::Message* msg, uint32_t timeout_millis)
+bool SerialGateway::recv(Message* msg, uint32_t timeout_millis)
 {
 
   return true;
