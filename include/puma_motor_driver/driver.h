@@ -24,6 +24,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 #ifndef PUMA_MOTOR_DRIVER_DRIVER_H
 #define PUMA_MOTOR_DRIVER_DRIVER_H
 
+#include <stdint.h>
 #include <string>
 
 namespace puma_motor_driver
@@ -43,6 +44,13 @@ public:
   void speedSet(float cmd);
   void currentSet(float cmd);
   void positionSet(float cmd);
+
+  /** Assignment operator, necessary on pre-C++11 to copy instances
+   *  into a vector. */
+  Driver operator=(const Driver& rhs)
+  {
+    return Driver(gateway_, device_number_, device_name_);
+  }
 
 private:
   Gateway& gateway_;

@@ -26,6 +26,8 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 #include "puma_motor_driver/gateway.h"
 #include "puma_motor_driver/message.h"
 
+#include <cstring>
+
 
 namespace puma_motor_driver
 {
