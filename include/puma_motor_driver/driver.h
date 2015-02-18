@@ -45,7 +45,7 @@ public:
   void currentSet(float cmd);
   void positionSet(float cmd);
 
-  /** Assignment operator, necessary on pre-C++11 to copy instances
+  /** Assignment operator, necessary on GCC 4.8 to copy instances
    *  into a vector. */
   Driver operator=(const Driver& rhs)
   {

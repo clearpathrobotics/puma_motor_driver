@@ -38,10 +38,10 @@ public:
                       puma_motor_driver::Gateway& gateway) :
     gateway_(gateway)
   {
-    drivers_.push_back(puma_motor_driver::Driver(gateway_, 2, "left"));
-    drivers_.push_back(puma_motor_driver::Driver(gateway_, 3, "right"));
-    drivers_.push_back(puma_motor_driver::Driver(gateway_, 4, "front"));
-    drivers_.push_back(puma_motor_driver::Driver(gateway_, 5, "rear"));
+    drivers_.push_back(puma_motor_driver::Driver(gateway_, 3, "left"));
+    drivers_.push_back(puma_motor_driver::Driver(gateway_, 4, "right"));
+    drivers_.push_back(puma_motor_driver::Driver(gateway_, 5, "front"));
+    drivers_.push_back(puma_motor_driver::Driver(gateway_, 2, "rear"));
 
     cmd_sub_ = nh.subscribe("cmd", 1, &MultiControllerNode::cmd_callback, this);
   }
