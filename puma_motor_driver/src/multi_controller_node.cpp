@@ -22,9 +22,12 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCL
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "boost/foreach.hpp"
 #include "boost/scoped_ptr.hpp"
 #include "puma_motor_driver/driver.h"
 #include "puma_motor_driver/serial_gateway.h"
+#include "puma_motor_msgs/MultiStatus.h"
+#include "puma_motor_msgs/Status.h"
 #include "ros/ros.h"
 #include "sensor_msgs/JointState.h"
 #include "serial/serial.h"
@@ -43,43 +46,93 @@ public:
     drivers_.push_back(puma_motor_driver::Driver(gateway_, 2, "rl"));
     drivers_.push_back(puma_motor_driver::Driver(gateway_, 4, "rr"));
 
-    cmd_sub_ = nh.subscribe("cmd", 1, &MultiControllerNode::cmd_callback, this);
+    cmd_sub_ = nh.subscribe("cmd", 1, &MultiControllerNode::cmdCallback, this);
+    status_pub_ = nh.advertise<puma_motor_msgs::MultiStatus>("status", 5);
+
+    status_msg_.drivers.resize(4);
   }
 
-  void cmd_callback(const sensor_msgs::JointStateConstPtr& cmd_msg)
+  void cmdCallback(const sensor_msgs::JointStateConstPtr& cmd_msg)
   {
+    // TODO: Match joint names rather than assuming indexes align.
     for (int joint = 0; joint < 4; joint++)
     {
-      drivers_[joint].voltageSet(cmd_msg->velocity[joint]);
+      drivers_[joint].commandDutyCycle(cmd_msg->velocity[joint]);
     }
+  }
+
+  bool connectIfNotConnected()
+  {
+    if (!gateway_.isConnected())
+    {
+      if (!gateway_.connect())
+      {
+        ROS_ERROR("Error connecting to motor driver gateway. Retrying in 1 second.");
+        return false;
+      }
+      else
+      {
+        ROS_INFO("Connection to motor driver gateway successful.");
+      }
+    }
+    return true;
   }
 
   void run()
   {
-    ros::Rate rate(20);
+    ros::Rate rate(10);
 
     while (ros::ok())
     {
-      if (!gateway_.isConnected())
+      if (!connectIfNotConnected())
       {
-        if (!gateway_.connect())
+        ros::Duration(1.0).sleep();
+        continue;
+      }
+
+      // Process ROS callbacks, which will queue command messages to the drivers.
+      ros::spinOnce();
+      gateway_.sendAllQueued();
+      ros::Duration(0.01).sleep();
+
+      // Queue data requests for the drivers in order to assemble an amalgamated status message.
+      BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
+      {
+        driver.clearStatusCache();
+        driver.requestStatusMessages();
+        gateway_.sendAllQueued();
+        ros::Duration(0.012).sleep();
+      }
+
+      // Send all queued messages.
+
+      // Process all received messages through the connected driver instances.
+      puma_motor_driver::Message recv_msg;
+      while (gateway_.recv(&recv_msg))
+      {
+        BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
         {
-          ROS_ERROR("Error connecting to motor driver gateway. Retrying in 1 second.");
-          ros::Duration(1.0).sleep();
-          continue;
-        }
-        else
-        {
-          ROS_INFO("Connection to motor driver gateway successful.");
+          driver.processMessage(recv_msg);
         }
       }
 
-      ros::spinOnce();
+      // Prepare output status message to ROS.
+      uint8_t status_index = 0;
+      BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
+      {
+        puma_motor_msgs::Status* s = &status_msg_.drivers[status_index];
+        s->device_number = driver.deviceNumber();
+        s->device_name = driver.deviceName();
+        s->duty_cycle = driver.lastDutyCycle();
+        s->bus_voltage = driver.lastBusVoltage();
+        s->current = driver.lastCurrent();
 
-      // TODO: Poll for incoming data and generate messages.
+        status_index++;
+      }
+      status_pub_.publish(status_msg_);
 
-
-      gateway_.heartbeat();
+      // Send the broadcast heartbeat message.
+      // gateway_.heartbeat();
       rate.sleep();
     }
   }
@@ -89,6 +142,11 @@ private:
   std::vector<puma_motor_driver::Driver> drivers_;
 
   ros::Subscriber cmd_sub_;
+
+  // Maintain a persistent MultiStatus to avoid doing vector resizes on
+  // every trip through the main loop.
+  puma_motor_msgs::MultiStatus status_msg_;
+  ros::Publisher status_pub_;
 };
 
 

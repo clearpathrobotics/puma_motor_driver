@@ -27,10 +27,12 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 #include <stdint.h>
 #include <string>
 
+
 namespace puma_motor_driver
 {
 
 class Gateway;
+class Message;
 
 class Driver
 {
@@ -38,12 +40,44 @@ public:
   Driver(Gateway& gateway, uint8_t device_number, std::string device_name)
     : gateway_(gateway), device_number_(device_number), device_name_(device_name) {}
 
-  void spinOnce();
+  void processMessage(const Message& received_msg);
 
-  void voltageSet(float cmd);
-  void speedSet(float cmd);
-  void currentSet(float cmd);
-  void positionSet(float cmd);
+  /**
+   * Sends messages to the motor controller requesting all missing elements to
+   * populate the cache of status data. Returns true if any messages were sent,
+   * false if the cache is already complete.
+   */
+  bool requestStatusMessages();
+
+  /**
+   * Clear the received flags from the status cache, in preparation for the next
+   * request batch to go out.
+   */
+  void clearStatusCache();
+
+  /**
+   * Switch to open-loop voltage control, and command the supplied value.
+   *
+   * @param[in] cmd Value to command, ranging from -1.0 to 1.0, where zero is neutral.
+   */
+  void commandDutyCycle(float cmd);
+
+  //void speedSet(float cmd);
+  //void currentSet(float cmd);
+  //void positionSet(float cmd);
+  //void neutralSet();
+
+  float lastDutyCycle();
+  float lastBusVoltage();
+  float lastCurrent();
+  float lastTemperature();
+
+
+  /**
+   * Return the current duty cycle of the motor driver's h-bridge from the status cache.
+   */
+  float statusDutyCycleGet();
+
 
   /** Assignment operator, necessary on GCC 4.8 to copy instances
    *  into a vector. */
@@ -52,10 +86,28 @@ public:
     return Driver(gateway_, device_number_, device_name_);
   }
 
+  std::string deviceName() { return device_name_; }
+
+  uint8_t deviceNumber() { return device_number_; }
+
 private:
   Gateway& gateway_;
   uint8_t device_number_;
   std::string device_name_;
+
+  struct StatusField
+  {
+    uint8_t data[4];
+    bool received;
+
+    float interpretFixed8x8()
+    {
+      return static_cast<int8_t>(data[1]) + static_cast<float>(data[0]) / 256.0f;
+    }
+  };
+  StatusField status_fields_[11];
+
+  StatusField* statusFieldForMessage(const Message& msg);
 };
 
 }

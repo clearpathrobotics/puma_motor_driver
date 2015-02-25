@@ -38,8 +38,18 @@ struct Message
   uint32_t id;
   uint8_t len;
 
-  Message() : id(0), len(0)
+  Message(uint32_t id = 0) : id(id), len(0)
   {
+  }
+
+  uint32_t getDeviceNumber() const
+  {
+    return id & CAN_MSGID_DEVNO_M;
+  }
+
+  uint32_t getApi() const
+  {
+    return id & (CAN_MSGID_FULL_M ^ CAN_MSGID_DEVNO_M);
   }
 };
 

@@ -1,4 +1,8 @@
-Header header
+# Number on the bus (CAN ID)
+uint8 device_number
+
+# Name of joint controlled, or other identifier.
+string device_name
 
 # Duty cycle of the h-bridge driver (-1..1)
 float32 duty_cycle

@@ -40,22 +40,14 @@ public:
   virtual bool isConnected()=0;
 
   /**
-   * Creates and immediately sends a system heartbeat message, which
-   * makes all controllers on the bus show solid amber rather than
-   * flashing.
+   * Queue specified message to be sent on the bus.
    */
-  void heartbeat()
-  {
-    Message heartbeat_msg;
-    heartbeat_msg.id = CAN_MSGID_API_HEARTBEAT;
-    heartbeat_msg.len = 0;
-    send(heartbeat_msg);
-  }
+  virtual void queue(const Message& msg)=0;
 
   /**
-   * Send the specified message on the bus.
+   * Send the queued messages on the bus.
    */
-  virtual void send(const Message& msg)=0;
+  virtual bool sendAllQueued()=0;
 
   /**
    * Receive the next available message from the bus, blocking for
@@ -63,7 +55,7 @@ public:
    *
    * \return True if a message was returned false if timeout occurred.
    */
-  virtual bool recv(Message* msg, uint32_t timeout_millis)=0;
+  virtual bool recv(Message* msg)=0;
 };
 
 }  // puma_motor_driver

@@ -33,7 +33,9 @@ namespace puma_motor_driver
 class SerialGateway : public Gateway
 {
 public:
-  SerialGateway(serial::Serial& serial) : serial_(serial) {
+  SerialGateway(serial::Serial& serial) : serial_(serial),
+      write_buffer_index_(0), read_buffer_index_(0), read_buffer_len_(0)
+  {
     serial::Timeout to(serial::Timeout::simpleTimeout(50));
     serial_.setTimeout(to);
     serial_.setBaudrate(115200);
@@ -42,11 +44,25 @@ public:
   virtual bool connect();
   virtual bool isConnected();
 
-  virtual void send(const Message& msg);
-  virtual bool recv(Message* msg, uint32_t timeout_millis);
+  virtual bool recv(Message* msg);
+  virtual void queue(const Message& msg);
+  virtual bool sendAllQueued();
 
 private:
   serial::Serial& serial_;
+
+  void queue(uint8_t ch);
+  bool read(uint8_t* ch);
+
+  void encodeAndQueue(const uint8_t* data, uint8_t len);
+  bool readAndDecode(uint8_t* data, uint8_t len);
+
+  uint8_t write_buffer_[1024];
+  uint16_t write_buffer_index_;
+
+  uint8_t read_buffer_[1024];
+  uint16_t read_buffer_index_;
+  uint16_t read_buffer_len_;
 };
 
 }  // puma_motor_driver
