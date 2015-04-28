@@ -34,6 +34,7 @@ namespace puma_motor_driver
 
 void Driver::processMessage(const Message& received_msg)
 {
+
   // If it's not our message, jump out.
   if (received_msg.getDeviceNumber() != device_number_) return;
 
@@ -74,13 +75,13 @@ bool Driver::requestStatusMessages()
   gateway_.queue(Message(LM_API_STATUS_VOLTOUT | device_number_));
   gateway_.queue(Message(LM_API_STATUS_VOLTBUS | device_number_));
   gateway_.queue(Message(LM_API_STATUS_CURRENT | device_number_));
-  gateway_.queue(Message(LM_API_STATUS_TEMP | device_number_));
-  gateway_.queue(Message(LM_API_STATUS_POS | device_number_));
-  gateway_.queue(Message(LM_API_STATUS_SPD | device_number_));
-  //gateway_.queue(Message(LM_API_STATUS_FAULT | device_number_));
-  //gateway_.queue(Message(LM_API_STATUS_POWER | device_number_));
-  //gateway_.queue(Message(LM_API_STATUS_CMODE | device_number_));
-  //gateway_.queue(Message(LM_API_STATUS_VOUT | device_number_));
+  gateway_.queue(Message(LM_API_STATUS_TEMP    | device_number_));
+  gateway_.queue(Message(LM_API_STATUS_POS     | device_number_));
+  gateway_.queue(Message(LM_API_STATUS_SPD     | device_number_));
+  gateway_.queue(Message(LM_API_STATUS_FAULT   | device_number_));
+  gateway_.queue(Message(LM_API_STATUS_POWER   | device_number_));
+  gateway_.queue(Message(LM_API_STATUS_CMODE   | device_number_));
+  gateway_.queue(Message(LM_API_STATUS_VOUT    | device_number_));
   return true;
 }
 
@@ -99,6 +100,42 @@ float Driver::lastBusVoltage()
 float Driver::lastCurrent()
 {
   StatusField* field = statusFieldForMessage(Message(LM_API_STATUS_CURRENT));
+  return field->interpretFixed8x8();
+}
+
+float Driver::lastPosition()
+{
+  StatusField* field = statusFieldForMessage(Message(LM_API_STATUS_POS));
+  return field->interpretFixed8x8();
+}
+
+float Driver::lastSpeed()
+{
+  StatusField* field = statusFieldForMessage(Message(LM_API_STATUS_SPD));
+  return field->interpretFixed8x8();
+}
+
+float Driver::lastFault()
+{
+  StatusField* field = statusFieldForMessage(Message(LM_API_STATUS_FAULT));
+  return field->interpretFixed8x8();
+}
+
+float Driver::lastPower()
+{
+  StatusField* field = statusFieldForMessage(Message(LM_API_STATUS_POWER));
+  return field->interpretFixed8x8();
+}
+
+float Driver::lastMode()
+{
+  StatusField* field = statusFieldForMessage(Message(LM_API_STATUS_CMODE));
+  return field->interpretFixed8x8();
+}
+
+float Driver::lastOutVoltage()
+{
+  StatusField* field = statusFieldForMessage(Message(LM_API_STATUS_VOUT));
   return field->interpretFixed8x8();
 }
 

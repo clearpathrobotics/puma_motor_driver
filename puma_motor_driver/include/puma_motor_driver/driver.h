@@ -71,7 +71,12 @@ public:
   float lastBusVoltage();
   float lastCurrent();
   float lastTemperature();
-
+  float lastPosition();
+  float lastSpeed();
+  float lastFault();
+  float lastPower();
+  float lastMode();
+  float lastOutVoltage();
 
   /**
    * Return the current duty cycle of the motor driver's h-bridge from the status cache.

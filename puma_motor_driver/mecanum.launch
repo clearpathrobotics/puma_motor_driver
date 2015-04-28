@@ -6,6 +6,7 @@
   <node pkg="puma_motor_driver" name="joy_mecanum" type="joy_mecanum" />
 
   <node pkg="puma_motor_driver" name="puma_multi_controller_node" type="puma_multi_controller_node">
-    <param name="port" value="/dev/ttyUSB0" />
+    <param name="canbus_dev" value="can0" />
   </node>
+
 </launch>
