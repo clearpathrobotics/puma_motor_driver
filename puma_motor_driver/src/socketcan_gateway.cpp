@@ -95,8 +95,10 @@ bool SocketCANGateway::isConnected()
 bool SocketCANGateway::recv(Message* msg)
 {
 
-  int bytes = read(socket_, &read_frame_, sizeof(struct can_frame));
-  ROS_DEBUG("Recieved ID 0x%08x, data (%d)", (read_frame_.can_id& CAN_EFF_MASK), read_frame_.can_dlc);
+  can_frame read_frame;
+
+  int bytes = read(socket_, &read_frame, sizeof(struct can_frame));
+  ROS_DEBUG("Recieved ID 0x%08x, data (%d)", (read_frame.can_id& CAN_EFF_MASK), read_frame.can_dlc);
   if (bytes <= 0)
   {
     ROS_DEBUG("No more frames");
@@ -104,7 +106,7 @@ bool SocketCANGateway::recv(Message* msg)
   }
   else
   {
-    msgToFrame(msg, &read_frame_);
+    msgToFrame(msg, &read_frame);
     return true;
   }
 

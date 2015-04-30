@@ -68,7 +68,6 @@ private:
 
   can_frame write_frames_[1024];
   int write_frames_index_;
-  can_frame read_frame_;
 
 };
 
