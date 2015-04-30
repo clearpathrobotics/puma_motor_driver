@@ -170,7 +170,7 @@ int main(int argc, char *argv[])
   {
     gateway.reset(new puma_motor_driver::SocketCANGateway (canbus_dev));
   }
-  else if (nh_private.getParam("port", serial_port))
+  else if (nh_private.getParam("serial_port", serial_port))
   {
     serial::Serial serial;
     serial.setPort(serial_port);

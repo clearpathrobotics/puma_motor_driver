@@ -47,7 +47,7 @@ class SocketCANGateway : public Gateway
 public:
   SocketCANGateway(std::string canbus_dev):
     canbus_dev_(canbus_dev),
-    isConnected_(false),
+    is_connected_(false),
     write_frames_index_(0)
   {
   }
@@ -64,7 +64,7 @@ private:
 
   int socket_;
   std::string canbus_dev_;  // CAN interface ID
-  bool isConnected_;
+  bool is_connected_;
 
   can_frame write_frames_[1024];
   int write_frames_index_;

@@ -80,15 +80,15 @@ bool SocketCANGateway::connect()
   setsockopt(socket_, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 
   ROS_INFO("Opened Socket CAN on %s", canbus_dev_.c_str());
-  isConnected_ = true;
+  is_connected_ = true;
 
-  return isConnected_;
+  return is_connected_;
 }
 
 
 bool SocketCANGateway::isConnected()
 {
-  return isConnected_;
+  return is_connected_;
 }
 
 
