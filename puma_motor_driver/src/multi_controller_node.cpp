@@ -26,6 +26,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 #include "boost/scoped_ptr.hpp"
 #include "puma_motor_driver/driver.h"
 #include "puma_motor_driver/serial_gateway.h"
+#include "puma_motor_driver/socketcan_gateway.h"
 #include "puma_motor_msgs/MultiStatus.h"
 #include "puma_motor_msgs/Status.h"
 #include "ros/ros.h"
@@ -80,7 +81,7 @@ public:
 
   void run()
   {
-    ros::Rate rate(10);
+    ros::Rate rate(25);
 
     while (ros::ok())
     {
@@ -93,7 +94,7 @@ public:
       // Process ROS callbacks, which will queue command messages to the drivers.
       ros::spinOnce();
       gateway_.sendAllQueued();
-      ros::Duration(0.01).sleep();
+      ros::Duration(0.005).sleep();
 
       // Queue data requests for the drivers in order to assemble an amalgamated status message.
       BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
@@ -101,7 +102,7 @@ public:
         driver.clearStatusCache();
         driver.requestStatusMessages();
         gateway_.sendAllQueued();
-        ros::Duration(0.012).sleep();
+        ros::Duration(0.006).sleep();
       }
 
       // Send all queued messages.
@@ -126,6 +127,10 @@ public:
         s->duty_cycle = driver.lastDutyCycle();
         s->bus_voltage = driver.lastBusVoltage();
         s->current = driver.lastCurrent();
+        s->travel = driver.lastPosition();
+        s->fault = driver.lastFault();
+        s->mode = driver.lastMode();
+        s->output_voltage = driver.lastOutVoltage();
 
         status_index++;
       }
@@ -157,12 +162,27 @@ int main(int argc, char *argv[])
   ros::NodeHandle nh_private("~");
 
   std::string serial_port;
-  nh_private.param<std::string>("port", serial_port, "/dev/ttyUSB0");
+  std::string canbus_dev;
 
-  serial::Serial serial;
-  serial.setPort(serial_port);
-  puma_motor_driver::SerialGateway gateway(serial);
+  boost::scoped_ptr<puma_motor_driver::Gateway> gateway;
 
-  MultiControllerNode n(nh, nh_private, gateway);
+  if (nh_private.getParam("canbus_dev", canbus_dev))
+  {
+    gateway.reset(new puma_motor_driver::SocketCANGateway (canbus_dev));
+  }
+  else if (nh_private.getParam("serial_port", serial_port))
+  {
+    serial::Serial serial;
+    serial.setPort(serial_port);
+    gateway.reset(new puma_motor_driver::SerialGateway (serial));
+  }
+  else
+  {
+    ROS_FATAL("No communication method given.");
+    return 1;
+  }
+
+  MultiControllerNode n(nh, nh_private, *gateway);
   n.run();
+
 }

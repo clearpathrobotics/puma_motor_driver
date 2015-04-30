@@ -5,6 +5,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   sensor_msgs
   serial
+  puma_motor_msgs
 )
 
 ## Generate messages in the 'msg' folder
@@ -30,7 +31,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES puma_motor_driver
-  CATKIN_DEPENDS roscpp sensor_msgs serial
+  CATKIN_DEPENDS roscpp sensor_msgs serial puma_motor_msgs
 #  DEPENDS system_lib
 )
 
@@ -42,18 +43,22 @@ include_directories(
 add_library(puma_motor_driver
   src/driver.cpp
   src/serial_gateway.cpp
-  #src/socketcan_gateway.cpp
+  src/socketcan_gateway.cpp
 )
 target_link_libraries(puma_motor_driver
   ${catkin_LIBRARIES}
 )
 
+add_dependencies(puma_motor_driver puma_motor_msgs_gencpp)
 add_executable(puma_multi_controller_node src/multi_controller_node.cpp)
+
 
 target_link_libraries(puma_multi_controller_node
   puma_motor_driver
   ${catkin_LIBRARIES}
 )
+
+
 
 # Mark executables and/or libraries for installation
 install(TARGETS puma_motor_driver puma_multi_controller_node
