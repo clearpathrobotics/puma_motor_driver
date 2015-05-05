@@ -10,6 +10,8 @@ add_message_files(
   FILES
   MultiStatus.msg
   Status.msg
+  MultiFeedback.msg
+  Feedback.msg
 )
 
 generate_messages(

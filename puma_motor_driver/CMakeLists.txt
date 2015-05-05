@@ -45,13 +45,13 @@ add_library(puma_motor_driver
   src/serial_gateway.cpp
   src/socketcan_gateway.cpp
 )
+
 target_link_libraries(puma_motor_driver
   ${catkin_LIBRARIES}
 )
-
 add_dependencies(puma_motor_driver puma_motor_msgs_gencpp)
-add_executable(puma_multi_controller_node src/multi_controller_node.cpp)
 
+add_executable(puma_multi_controller_node src/multi_controller_node.cpp)
 
 target_link_libraries(puma_multi_controller_node
   puma_motor_driver

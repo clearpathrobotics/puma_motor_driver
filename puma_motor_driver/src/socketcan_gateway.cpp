@@ -94,7 +94,6 @@ bool SocketCANGateway::isConnected()
 
 bool SocketCANGateway::recv(Message* msg)
 {
-
   can_frame read_frame;
 
   int bytes = read(socket_, &read_frame, sizeof(struct can_frame));
