@@ -26,7 +26,9 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 
 #include <stdint.h>
 #include <string>
-
+#include <ros/ros.h>
+#include "puma_motor_driver/can_proto.h"
+#include "puma_motor_msgs/Status.h"
 
 namespace puma_motor_driver
 {
@@ -38,9 +40,19 @@ class Driver
 {
 public:
   Driver(Gateway& gateway, uint8_t device_number, std::string device_name)
-    : gateway_(gateway), device_number_(device_number), device_name_(device_name) {}
+    : gateway_(gateway), device_number_(device_number), device_name_(device_name),
+      configured_(false), state_(0), control_mode_(puma_motor_msgs::Status::MODE_SPEED),
+      gain_p_(1), gain_i_(0), gain_d_(0), encoder_cpr_(1), gear_ratio_(1)
+    {
+    }
 
   void processMessage(const Message& received_msg);
+
+  void sendUint8(uint32_t id, uint8_t value);
+  void sendUint16(uint32_t id, uint16_t value);
+  void sendFixed8x8(uint32_t id, float value);
+  void sendFixed16x16(uint32_t id, float value);
+
 
   /**
    * Sends messages to the motor controller requesting all missing elements to
@@ -48,6 +60,13 @@ public:
    * false if the cache is already complete.
    */
   bool requestStatusMessages();
+
+  /**
+   * Sends messages to the motor controller requesting all missing elements to
+   * populate the cache of status data. Returns true if any messages were sent,
+   * false if the cache is already complete.
+   */
+  bool requestFeedbackMessages();
 
   /**
    * Clear the received flags from the status cache, in preparation for the next
@@ -62,10 +81,16 @@ public:
    */
   void commandDutyCycle(float cmd);
 
-  //void speedSet(float cmd);
+  void commandSpeed(float cmd);
   //void currentSet(float cmd);
   //void positionSet(float cmd);
   //void neutralSet();
+
+  void setEncoderCPR(uint16_t encoder_cpr);
+  void setGearRatio(float gear_ratio);
+  void setMode(uint8_t mode);
+  void setMode(uint8_t mode, float p, float i, float d);
+  void setGains(float p, float i, float d);
 
   float lastDutyCycle();
   float lastBusVoltage();
@@ -73,16 +98,29 @@ public:
   float lastTemperature();
   float lastPosition();
   float lastSpeed();
-  float lastFault();
-  float lastPower();
-  float lastMode();
+  uint8_t lastFault();
+  uint8_t lastPower();
   float lastOutVoltage();
+  uint8_t lastMode();
 
-  /**
+  void configureParams();
+  void verifyParams();
+  bool isConfigured();
+  void resetConfiguration();
+
+  uint8_t posEncoderRef();
+  uint8_t spdEncoderRef();
+  uint16_t encoderCounts();
+
+  float getP();
+  float getI();
+  float getD();
+
+  /**  **CURRENTLY NOT USED**
    * Return the current duty cycle of the motor driver's h-bridge from the status cache.
    */
   float statusDutyCycleGet();
-
+  float statusSpeedGet();
 
   /** Assignment operator, necessary on GCC 4.8 to copy instances
    *  into a vector. */
@@ -100,6 +138,16 @@ private:
   uint8_t device_number_;
   std::string device_name_;
 
+  bool configured_;
+  uint8_t state_;
+
+  uint8_t control_mode_;
+  float gain_p_;
+  float gain_i_;
+  float gain_d_;
+  uint16_t encoder_cpr_;
+  float gear_ratio_;
+
   struct StatusField
   {
     uint8_t data[4];
@@ -108,6 +156,11 @@ private:
     float interpretFixed8x8()
     {
       return static_cast<int8_t>(data[1]) + static_cast<float>(data[0]) / 256.0f;
+    }
+
+    double interpretFixed16x16()
+    {
+      return ((data[0] | static_cast<int32_t>(data[1]) << 8 | static_cast<int32_t>(data[2]) << 16 | static_cast<int32_t>(data[3]) << 24)) / double(1<<16);
     }
   };
   StatusField status_fields_[11];
