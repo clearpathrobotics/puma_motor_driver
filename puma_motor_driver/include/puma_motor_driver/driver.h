@@ -155,7 +155,7 @@ private:
 
     float interpretFixed8x8()
     {
-      return static_cast<int8_t>(data[1]) + static_cast<float>(data[0]) / 256.0f;
+      return static_cast<int8_t>(data[1]) + static_cast<float>(data[0]) / double(1<<8);
     }
 
     double interpretFixed16x16()

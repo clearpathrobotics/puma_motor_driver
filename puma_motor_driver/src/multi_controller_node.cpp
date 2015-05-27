@@ -59,33 +59,36 @@ public:
     status_count_ = 0;
 
     active_ = false;
-    desired_mode_ = puma_motor_msgs::Status::MODE_VOLTAGE;
+    desired_mode_ = puma_motor_msgs::Status::MODE_SPEED;
 
     BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
     {
       driver.clearStatusCache();
       driver.setEncoderCPR(1024);
       driver.setGearRatio(79);
-      //  driver.setMode(desired_mode_, 1, 0, 0);
-      driver.setMode(desired_mode_);
+      driver.setMode(desired_mode_, -0.1, -0.01, 0.0);
     }
   }
 
 
   void cmdCallback(const sensor_msgs::JointStateConstPtr& cmd_msg)
   {
-    // TODO: Match joint names rather than assuming indexes align.
-    for (int joint = 0; joint < 4; joint++)
+    if (active_)
     {
-      if (desired_mode_ == puma_motor_msgs::Status::MODE_VOLTAGE)
+      // TODO: Match joint names rather than assuming indexes align.
+      for (int joint = 0; joint < 4; joint++)
       {
-        drivers_[joint].commandDutyCycle(cmd_msg->velocity[joint]);
-      }
-      else if (desired_mode_ == puma_motor_msgs::Status::MODE_SPEED)
-      {
-        drivers_[joint].commandSpeed(cmd_msg->velocity[joint]*57/2);  //  Max Speed/2
+        if (desired_mode_ == puma_motor_msgs::Status::MODE_VOLTAGE)
+        {
+          drivers_[joint].commandDutyCycle(cmd_msg->velocity[joint]);
+        }
+        else if (desired_mode_ == puma_motor_msgs::Status::MODE_SPEED)
+        {
+          drivers_[joint].commandSpeed(cmd_msg->velocity[joint]*6.28);
+        }
       }
     }
+
   }
 
 
@@ -125,7 +128,7 @@ public:
           if ( driver.lastPower() != 0)
           {
             active_ = false;
-            ROS_INFO("Pwr Rst: %i", driver.lastPower());
+            ROS_WARN("There was a power rest on Dev: %i, will reconfigure all drivers.", driver.lastPower());
             BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
             {
               driver.resetConfiguration();
@@ -139,7 +142,7 @@ public:
       gateway_.sendAllQueued();
       ros::Duration(0.005).sleep();
 
-      //Set params
+      // Set parameters for each driver.
       if (!active_)
       {
         BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
@@ -186,7 +189,7 @@ public:
         }
       }
 
-      // CHECK Params
+      // Check parameters of each driver instance.
       if (!active_)
       {
         BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
@@ -195,6 +198,7 @@ public:
         }
       }
 
+      // Verify that the all drivers are configured.
       if ( drivers_[0].isConfigured() == true
         && drivers_[1].isConfigured() == true
         && drivers_[2].isConfigured() == true
@@ -206,39 +210,46 @@ public:
       }
 
 
-      // Prepare output feedback message to ROS.
-      uint8_t feedback_index = 0;
-      BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
+      if (active_)
       {
-        puma_motor_msgs::Feedback* f = &feedback_msg_.drivers_feedback[feedback_index];
-        f->device_number = driver.deviceNumber();
-        f->device_name = driver.deviceName();
-        f->duty_cycle = driver.lastDutyCycle();
-        f->current = driver.lastCurrent();
-        f->travel = driver.lastPosition();
-        f->speed = driver.lastSpeed();
-        feedback_index++;
-      }
-      feedback_pub_.publish(feedback_msg_);
-
-      if (status_count_ >= freq_)
-      {
-        // Prepare output status message to ROS.
-        uint8_t status_index = 0;
+        // Prepare output feedback message to ROS.
+        uint8_t feedback_index = 0;
         BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
         {
-          puma_motor_msgs::Status* s = &status_msg_.drivers[status_index];
-          s->device_number = driver.deviceNumber();
-          s->device_name = driver.deviceName();
-          s->bus_voltage = driver.lastBusVoltage();
-          s->fault = driver.lastFault();
-          s->output_voltage = driver.lastOutVoltage();
-          s->mode = driver.lastMode();
+          puma_motor_msgs::Feedback* f = &feedback_msg_.drivers_feedback[feedback_index];
+          f->device_number = driver.deviceNumber();
+          f->device_name = driver.deviceName();
+          f->duty_cycle = driver.lastDutyCycle();
+          f->current = driver.lastCurrent();
+          f->travel = driver.lastPosition();
+          f->speed = driver.lastSpeed();
 
-          status_index++;
-          status_count_ = 0;
+          feedback_index++;
         }
-        status_pub_.publish(status_msg_);
+        feedback_msg_.header.stamp = ros::Time::now();
+        feedback_pub_.publish(feedback_msg_);
+
+        if (status_count_ >= freq_)
+        {
+          // Prepare output status message to ROS.
+          uint8_t status_index = 0;
+          BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
+          {
+            puma_motor_msgs::Status* s = &status_msg_.drivers[status_index];
+            s->device_number = driver.deviceNumber();
+            s->device_name = driver.deviceName();
+            s->bus_voltage = driver.lastBusVoltage();
+            s->fault = driver.lastFault();
+            s->output_voltage = driver.lastOutVoltage();
+            s->mode = driver.lastMode();
+            // ROS_INFO("Speed Status %f", driver.statusSpeedGet());
+
+            status_index++;
+            status_count_ = 0;
+          }
+          status_msg_.header.stamp = ros::Time::now();
+          status_pub_.publish(status_msg_);
+        }
 
       }
 

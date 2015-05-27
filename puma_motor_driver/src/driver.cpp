@@ -196,7 +196,7 @@ void Driver::verifyParams()
       if (fabs(getP() - gain_p_) < 0.00001)
       {
         state_++;
-        ROS_INFO("Dev: %i P gain constant was set to %f.", device_number_, gain_p_);
+        ROS_INFO("Dev: %i P gain constant was set to %f.", device_number_, getP());
       }
       else
       {
@@ -218,7 +218,7 @@ void Driver::verifyParams()
       if (fabs(getI() - gain_i_) < 0.00001)
       {
         state_++;
-        ROS_INFO("Dev: %i I gain constant was set to %f.", device_number_, gain_i_);
+        ROS_INFO("Dev: %i I gain constant was set to %f.", device_number_, getI());
       }
       else
       {
@@ -237,10 +237,10 @@ void Driver::verifyParams()
       }
       break;
     case 9:
-      if (getD() == gain_d_)
+      if (fabs(getD() - gain_d_) < 0.00001)
       {
         state_ = 200;
-        ROS_INFO("Dev: %i D gain constant was set to %f.",device_number_, gain_d_);
+        ROS_INFO("Dev: %i D gain constant was set to %f.", device_number_, getD());
       }
       else
       {
@@ -407,6 +407,7 @@ bool Driver::requestStatusMessages()
   gateway_.queue(Message(LM_API_STATUS_POWER   | device_number_));
   gateway_.queue(Message(LM_API_STATUS_VOUT    | device_number_));
   gateway_.queue(Message(LM_API_STATUS_CMODE   | device_number_));
+  // gateway_.queue(Message(LM_API_SPD_SET        | device_number_));
 
   return true;
 }
@@ -417,6 +418,7 @@ bool Driver::requestFeedbackMessages()
   gateway_.queue(Message(LM_API_STATUS_CURRENT | device_number_));
   gateway_.queue(Message(LM_API_STATUS_POS     | device_number_));
   gateway_.queue(Message(LM_API_STATUS_SPD     | device_number_));
+
 
   return true;
 }
@@ -447,19 +449,19 @@ float Driver::lastCurrent()
 float Driver::lastPosition()
 {
   StatusField* field = statusFieldForMessage(Message(LM_API_STATUS_POS));
-  return (field->interpretFixed16x16() * ((2*M_PI)/gear_ratio_));  //  Convert rev to rad
+  return (field->interpretFixed16x16() * ((2*M_PI)/gear_ratio_));  // Convert rev to rad
 }
 
 float Driver::statusSpeedGet()
 {
   StatusField* field = statusFieldForMessage(Message(LM_API_SPD_SET));
-  return (field->interpretFixed16x16() * ((2*M_PI)/(gear_ratio_*60)));  //  Convert RPM to rad/s
+  return (field->interpretFixed16x16() * ((2*M_PI)/(gear_ratio_*60)));  // Convert RPM to rad/s
 }
 
 float Driver::lastSpeed()
 {
   StatusField* field = statusFieldForMessage(Message(LM_API_STATUS_SPD));
-  return field->interpretFixed16x16() * ((2*M_PI)/(gear_ratio_*60));  //  Convert RPM to rad/s
+  return field->interpretFixed16x16() * ((2*M_PI)/(gear_ratio_*60));  // Convert RPM to rad/s
 }
 
 uint8_t Driver::lastFault()
