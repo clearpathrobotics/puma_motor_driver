@@ -36,6 +36,13 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 namespace puma_motor_driver
 {
 
+Driver::Driver(Gateway& gateway, uint8_t device_number, std::string device_name)
+  : gateway_(gateway), device_number_(device_number), device_name_(device_name),
+    configured_(false), state_(0), control_mode_(puma_motor_msgs::Status::MODE_SPEED),
+    gain_p_(1), gain_i_(0), gain_d_(0), encoder_cpr_(1), gear_ratio_(1)
+  {
+  }
+
 void Driver::processMessage(const Message& received_msg)
 {
 
@@ -369,8 +376,12 @@ void Driver::setMode(uint8_t mode)
 {
   if(mode == puma_motor_msgs::Status::MODE_VOLTAGE)
   {
-    ROS_INFO("Dev: %i mode set to voltage control", device_number_);
     control_mode_ = mode;
+    ROS_INFO("Dev: %i mode set to voltage control.", device_number_);
+    if (configured_)
+    {
+      resetConfiguration();
+    }
   }
   else
   {
@@ -382,13 +393,23 @@ void Driver::setMode(uint8_t mode, float p, float i, float d)
 {
   if(mode == puma_motor_msgs::Status::MODE_VOLTAGE)
   {
-    ROS_WARN("Dev: %i mode set to voltage control but PID gains are NOT needed.", device_number_);
+    control_mode_ = mode;
+    ROS_WARN("Dev: %i mode set to voltage control but PID gains are not needed.", device_number_);
+    if (configured_)
+    {
+      resetConfiguration();
+    }
   }
   else
   {
     control_mode_ = mode;
     setGains(p,i,d);
-    ROS_INFO("Dev: %i mode set to speed control with PID gains of P:%f, I:%f and D:%f", device_number_, gain_p_, gain_i_, gain_d_);
+    ROS_INFO("Dev: %i mode set toa closed-loop control with PID gains of P:%f, I:%f and D:%f.",
+      device_number_, gain_p_, gain_i_, gain_d_);
+    if (configured_)
+    {
+      resetConfiguration();
+    }
   }
 }
 
@@ -414,13 +435,31 @@ bool Driver::requestStatusMessages()
 
 bool Driver::requestFeedbackMessages()
 {
-  gateway_.queue(Message(LM_API_STATUS_VOLTOUT | device_number_));
-  gateway_.queue(Message(LM_API_STATUS_CURRENT | device_number_));
+  // gateway_.queue(Message(LM_API_STATUS_VOLTOUT | device_number_));
+  // gateway_.queue(Message(LM_API_STATUS_CURRENT | device_number_));
   gateway_.queue(Message(LM_API_STATUS_POS     | device_number_));
   gateway_.queue(Message(LM_API_STATUS_SPD     | device_number_));
 
-
   return true;
+}
+void Driver::requestFeedbackDutyCycle()
+{
+  gateway_.queue(Message(LM_API_STATUS_VOLTOUT | device_number_));
+}
+
+void Driver::requestFeedbackCurrent()
+{
+  gateway_.queue(Message(LM_API_STATUS_CURRENT | device_number_));
+}
+
+void Driver::requestFeedbackPosition()
+{
+  gateway_.queue(Message(LM_API_STATUS_POS | device_number_));
+}
+
+void Driver::requestFeedbackSpeed()
+{
+  gateway_.queue(Message(LM_API_STATUS_SPD | device_number_));
 }
 
 void Driver::resetConfiguration()

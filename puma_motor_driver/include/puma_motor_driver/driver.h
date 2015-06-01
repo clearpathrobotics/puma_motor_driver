@@ -39,12 +39,7 @@ class Message;
 class Driver
 {
 public:
-  Driver(Gateway& gateway, uint8_t device_number, std::string device_name)
-    : gateway_(gateway), device_number_(device_number), device_name_(device_name),
-      configured_(false), state_(0), control_mode_(puma_motor_msgs::Status::MODE_SPEED),
-      gain_p_(1), gain_i_(0), gain_d_(0), encoder_cpr_(1), gear_ratio_(1)
-    {
-    }
+  Driver(Gateway& gateway, uint8_t device_number, std::string device_name);
 
   void processMessage(const Message& received_msg);
 
@@ -67,7 +62,10 @@ public:
    * false if the cache is already complete.
    */
   bool requestFeedbackMessages();
-
+  void requestFeedbackDutyCycle();
+  void requestFeedbackCurrent();
+  void requestFeedbackPosition();
+  void requestFeedbackSpeed();
   /**
    * Clear the received flags from the status cache, in preparation for the next
    * request batch to go out.
@@ -155,12 +153,13 @@ private:
 
     float interpretFixed8x8()
     {
-      return static_cast<int8_t>(data[1]) + static_cast<float>(data[0]) / double(1<<8);
+      return static_cast<int8_t>(data[1]) + static_cast<float>(data[0]) / float(1<<8);
     }
 
     double interpretFixed16x16()
     {
-      return ((data[0] | static_cast<int32_t>(data[1]) << 8 | static_cast<int32_t>(data[2]) << 16 | static_cast<int32_t>(data[3]) << 24)) / double(1<<16);
+      return ((data[0] | static_cast<int32_t>(data[1]) << 8 |
+        static_cast<int32_t>(data[2]) << 16 | static_cast<int32_t>(data[3]) << 24)) / double(1<<16);
     }
   };
   StatusField status_fields_[11];

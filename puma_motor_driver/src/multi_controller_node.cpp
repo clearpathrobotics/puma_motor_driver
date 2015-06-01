@@ -35,9 +35,13 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 #include "sensor_msgs/JointState.h"
 #include "serial/serial.h"
 
+#define CALL_MEMBER_FN(object,ptrToMember)  ((object).*(ptrToMember))
 
 class MultiControllerNode
 {
+
+typedef void (puma_motor_driver::Driver::*requestFeedback)();
+
 public:
 
   MultiControllerNode(ros::NodeHandle& nh, ros::NodeHandle& nh_private,
@@ -45,16 +49,16 @@ public:
     gateway_(gateway)
   {
     drivers_.push_back(puma_motor_driver::Driver(gateway_, 3, "fl"));
-    drivers_.push_back(puma_motor_driver::Driver(gateway_, 5, "fr"));
+    // drivers_.push_back(puma_motor_driver::Driver(gateway_, 5, "fr"));
     drivers_.push_back(puma_motor_driver::Driver(gateway_, 2, "rl"));
-    drivers_.push_back(puma_motor_driver::Driver(gateway_, 4, "rr"));
+    // drivers_.push_back(puma_motor_driver::Driver(gateway_, 4, "rr"));
 
     cmd_sub_ = nh.subscribe("cmd", 1, &MultiControllerNode::cmdCallback, this);
     status_pub_ = nh.advertise<puma_motor_msgs::MultiStatus>("status", 5);
     feedback_pub_ = nh.advertise<puma_motor_msgs::MultiFeedback>("feedback", 5);
 
-    status_msg_.drivers.resize(4);
-    feedback_msg_.drivers_feedback.resize(4);
+    status_msg_.drivers.resize(2);
+    feedback_msg_.drivers_feedback.resize(2);
     freq_ = 20;
     status_count_ = 0;
 
@@ -76,7 +80,7 @@ public:
     if (active_)
     {
       // TODO: Match joint names rather than assuming indexes align.
-      for (int joint = 0; joint < 4; joint++)
+      for (int joint = 0; joint < 2; joint++)
       {
         if (desired_mode_ == puma_motor_msgs::Status::MODE_VOLTAGE)
         {
@@ -84,7 +88,7 @@ public:
         }
         else if (desired_mode_ == puma_motor_msgs::Status::MODE_SPEED)
         {
-          drivers_[joint].commandSpeed(cmd_msg->velocity[joint]*6.28);
+          drivers_[joint].commandSpeed(cmd_msg->velocity[joint] * 6.28);
         }
       }
     }
@@ -128,7 +132,7 @@ public:
           if ( driver.lastPower() != 0)
           {
             active_ = false;
-            ROS_WARN("There was a power rest on Dev: %i, will reconfigure all drivers.", driver.lastPower());
+            ROS_WARN("There was a power rest on Dev: %s, will reconfigure all drivers.", driver.deviceName().c_str());
             BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
             {
               driver.resetConfiguration();
@@ -160,24 +164,61 @@ public:
         case 6:
           drivers_[1].requestStatusMessages();
           break;
-        case 11:
+        /*case 11:
           drivers_[2].requestStatusMessages();
           break;
         case 16:
           drivers_[3].requestStatusMessages();
-          break;
+          break;*/
       }
 
       // Queue data requests for the drivers in order to assemble an amalgamated status message.
-      BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
+      /*BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
       {
         //driver.clearStatusCache();
-        driver.requestFeedbackMessages();
+        //driver.requestFeedbackMessages();
 
         gateway_.sendAllQueued();
         ros::Duration(0.006).sleep();
+      }*/
+
+      for (int i = 0; i < 4; i++)
+      {
+        BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
+        {
+          CALL_MEMBER_FN(driver,feedbacks[i])();
+          gateway_.sendAllQueued();
+          ros::Duration(0.001).sleep();
+        }
       }
 
+      /*BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
+      {
+        driver.requestFeedback[0]();
+        gateway_.sendAllQueued();
+        ros::Duration(0.001).sleep();
+      }
+
+      BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
+      {
+        driver.requestFeedbackCurrent();
+        gateway_.sendAllQueued();
+        ros::Duration(0.001).sleep();
+      }
+
+      BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
+      {
+        driver.requestFeedbackSpeed();
+        gateway_.sendAllQueued();
+        ros::Duration(0.001).sleep();
+      }
+
+      BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
+      {
+        driver.requestFeedbackPosition();
+        gateway_.sendAllQueued();
+        ros::Duration(0.001).sleep();
+      }*/
 
       // Process all received messages through the connected driver instances.
       puma_motor_driver::Message recv_msg;
@@ -201,14 +242,13 @@ public:
       // Verify that the all drivers are configured.
       if ( drivers_[0].isConfigured() == true
         && drivers_[1].isConfigured() == true
-        && drivers_[2].isConfigured() == true
-        && drivers_[3].isConfigured() == true
+        // && drivers_[2].isConfigured() == true
+        // && drivers_[3].isConfigured() == true
         && active_ == false)
       {
         active_ = true;
-        ROS_INFO("All contollers active");
+        ROS_INFO("All contollers active.");
       }
-
 
       if (active_)
       {
@@ -263,6 +303,13 @@ public:
 private:
   puma_motor_driver::Gateway& gateway_;
   std::vector<puma_motor_driver::Driver> drivers_;
+
+  requestFeedback feedbacks[4] = {
+    &puma_motor_driver::Driver::requestFeedbackDutyCycle,
+    &puma_motor_driver::Driver::requestFeedbackCurrent,
+    &puma_motor_driver::Driver::requestFeedbackPosition,
+    &puma_motor_driver::Driver::requestFeedbackSpeed
+  };
 
   uint8_t freq_;
   uint8_t status_count_;

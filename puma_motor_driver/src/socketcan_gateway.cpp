@@ -41,6 +41,13 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 namespace puma_motor_driver
 {
 
+SocketCANGateway::SocketCANGateway(std::string canbus_dev):
+  canbus_dev_(canbus_dev),
+  is_connected_(false),
+  write_frames_index_(0)
+{
+}
+
 bool SocketCANGateway::connect()
 {
 
@@ -63,7 +70,7 @@ bool SocketCANGateway::connect()
 
   struct sockaddr_can addr;
   addr.can_family  = AF_CAN;
-  addr.can_ifindex = ifr.ifr_ifindex; 
+  addr.can_ifindex = ifr.ifr_ifindex;
 
   ROS_DEBUG("%s at index %d", canbus_dev_.c_str(), ifr.ifr_ifindex);
 
@@ -116,7 +123,6 @@ void SocketCANGateway::queue(const Message& msg)
   ROS_DEBUG("Queuing ID 0x%08x, data (%d)", msg.id, msg.len);
   write_frames_[write_frames_index_].can_id = msg.id | CAN_EFF_FLAG;
   write_frames_[write_frames_index_].can_dlc = msg.len;
-  
 
   for (int i = 0; i < msg.len; i++)
   {
