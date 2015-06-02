@@ -46,7 +46,7 @@ public:
   void sendUint8(uint32_t id, uint8_t value);
   void sendUint16(uint32_t id, uint16_t value);
   void sendFixed8x8(uint32_t id, float value);
-  void sendFixed16x16(uint32_t id, float value);
+  void sendFixed16x16(uint32_t id, double value);
 
 
   /**
@@ -66,6 +66,7 @@ public:
   void requestFeedbackCurrent();
   void requestFeedbackPosition();
   void requestFeedbackSpeed();
+  void requestFeedbackSetpoint();
   /**
    * Clear the received flags from the status cache, in preparation for the next
    * request batch to go out.
@@ -94,12 +95,13 @@ public:
   float lastBusVoltage();
   float lastCurrent();
   float lastTemperature();
-  float lastPosition();
-  float lastSpeed();
+  double lastPosition();
+  double lastSpeed();
   uint8_t lastFault();
   uint8_t lastPower();
   float lastOutVoltage();
   uint8_t lastMode();
+  double lastSetpoint();
 
   void configureParams();
   void verifyParams();
@@ -114,11 +116,11 @@ public:
   float getI();
   float getD();
 
-  /**  **CURRENTLY NOT USED**
-   * Return the current duty cycle of the motor driver's h-bridge from the status cache.
-   */
+
   float statusDutyCycleGet();
-  float statusSpeedGet();
+  double statusSpeedGet();
+  float statusCurrentGet();
+  double statusPositionGet();
 
   /** Assignment operator, necessary on GCC 4.8 to copy instances
    *  into a vector. */

@@ -57,6 +57,7 @@ public:
     feedbacks_.push_back(&puma_motor_driver::Driver::requestFeedbackCurrent);
     feedbacks_.push_back(&puma_motor_driver::Driver::requestFeedbackPosition);
     feedbacks_.push_back(&puma_motor_driver::Driver::requestFeedbackSpeed);
+    feedbacks_.push_back(&puma_motor_driver::Driver::requestFeedbackSetpoint);
 
     cmd_sub_ = nh.subscribe("cmd", 1, &MultiControllerNode::cmdCallback, this);
     status_pub_ = nh.advertise<puma_motor_msgs::MultiStatus>("status", 5);
@@ -178,15 +179,6 @@ public:
       }
 
       // Queue data requests for the drivers in order to assemble an amalgamated status message.
-      /*BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
-      {
-        //driver.clearStatusCache();
-        //driver.requestFeedbackMessages();
-
-        gateway_.sendAllQueued();
-        ros::Duration(0.006).sleep();
-      }*/
-
       BOOST_FOREACH(requestFeedback feedbackFc, feedbacks_)
       {
         BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
@@ -240,6 +232,7 @@ public:
           f->current = driver.lastCurrent();
           f->travel = driver.lastPosition();
           f->speed = driver.lastSpeed();
+          f->setpoint = driver.lastSetpoint();
 
           feedback_index++;
         }
@@ -259,7 +252,6 @@ public:
             s->fault = driver.lastFault();
             s->output_voltage = driver.lastOutVoltage();
             s->mode = driver.lastMode();
-            // ROS_INFO("Speed Status %f", driver.statusSpeedGet());
 
             status_index++;
             status_count_ = 0;
@@ -286,7 +278,7 @@ private:
   uint8_t freq_;
   uint8_t status_count_;
 
-  uint16_t encoder_countss_;
+  uint16_t encoder_counts_;
 
   bool active_;
   uint8_t desired_mode_;
