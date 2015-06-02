@@ -1,4 +1,4 @@
-# Number on the bus (CAN ID)
+# Number on the bus (CAN ID).
 uint8 device_number
 
 # Name of joint controlled, or other identifier.

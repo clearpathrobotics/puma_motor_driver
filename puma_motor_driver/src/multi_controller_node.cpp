@@ -46,12 +46,17 @@ public:
 
   MultiControllerNode(ros::NodeHandle& nh, ros::NodeHandle& nh_private,
                       puma_motor_driver::Gateway& gateway) :
-    gateway_(gateway)
+    nh_(nh),
+    nh_private_(nh_private),
+    gateway_(gateway),
+    active_(false),
+    status_count_(0),
+    desired_mode_(puma_motor_msgs::Status::MODE_SPEED)
   {
     drivers_.push_back(puma_motor_driver::Driver(gateway_, 3, "fl"));
-    // drivers_.push_back(puma_motor_driver::Driver(gateway_, 5, "fr"));
+    drivers_.push_back(puma_motor_driver::Driver(gateway_, 5, "fr"));
     drivers_.push_back(puma_motor_driver::Driver(gateway_, 2, "rl"));
-    // drivers_.push_back(puma_motor_driver::Driver(gateway_, 4, "rr"));
+    drivers_.push_back(puma_motor_driver::Driver(gateway_, 4, "rr"));
 
     feedbacks_.push_back(&puma_motor_driver::Driver::requestFeedbackDutyCycle);
     feedbacks_.push_back(&puma_motor_driver::Driver::requestFeedbackCurrent);
@@ -59,23 +64,22 @@ public:
     feedbacks_.push_back(&puma_motor_driver::Driver::requestFeedbackSpeed);
     feedbacks_.push_back(&puma_motor_driver::Driver::requestFeedbackSetpoint);
 
-    cmd_sub_ = nh.subscribe("cmd", 1, &MultiControllerNode::cmdCallback, this);
-    status_pub_ = nh.advertise<puma_motor_msgs::MultiStatus>("status", 5);
-    feedback_pub_ = nh.advertise<puma_motor_msgs::MultiFeedback>("feedback", 5);
+    cmd_sub_ = nh_.subscribe("cmd", 1, &MultiControllerNode::cmdCallback, this);
+    status_pub_ = nh_.advertise<puma_motor_msgs::MultiStatus>("status", 5);
+    feedback_pub_ = nh_.advertise<puma_motor_msgs::MultiFeedback>("feedback", 5);
+
+    nh_private_.param("gear_ratio", gear_ratio_, 79.0);
+    nh_private_.param<int>("encoder_cpr", encoder_cpr_, 1024);
+    nh_private_.param<int>("frequency", freq_, 20);
 
     status_msg_.drivers.resize(2);
     feedback_msg_.drivers_feedback.resize(2);
-    freq_ = 20;
-    status_count_ = 0;
-
-    active_ = false;
-    desired_mode_ = puma_motor_msgs::Status::MODE_SPEED;
 
     BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
     {
       driver.clearStatusCache();
-      driver.setEncoderCPR(1024);
-      driver.setGearRatio(79);
+      driver.setEncoderCPR(encoder_cpr_);
+      driver.setGearRatio(gear_ratio_);
       driver.setMode(desired_mode_, -0.1, -0.01, 0.0);
     }
   }
@@ -138,12 +142,20 @@ public:
           if ( driver.lastPower() != 0)
           {
             active_ = false;
-            ROS_WARN("There was a power rest on Dev: %s, will reconfigure all drivers.", driver.deviceName().c_str());
+            ROS_WARN("There was a power rest on Dev: %d, will reconfigure all drivers.", driver.deviceNumber());
             BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
             {
               driver.resetConfiguration();
             }
           }
+        }
+      }
+      else
+      {
+        // Set parameters for each driver.
+        BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
+        {
+          driver.configureParams();
         }
       }
 
@@ -152,14 +164,6 @@ public:
       gateway_.sendAllQueued();
       ros::Duration(0.005).sleep();
 
-      // Set parameters for each driver.
-      if (!active_)
-      {
-        BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
-        {
-          driver.configureParams();
-        }
-      }
 
       // Temp hack -> TODO: fix this.
       switch(status_count_)
@@ -170,12 +174,12 @@ public:
         case 6:
           drivers_[1].requestStatusMessages();
           break;
-        /*case 11:
+        case 11:
           drivers_[2].requestStatusMessages();
           break;
         case 16:
           drivers_[3].requestStatusMessages();
-          break;*/
+          break;
       }
 
       // Queue data requests for the drivers in order to assemble an amalgamated status message.
@@ -211,8 +215,8 @@ public:
       // Verify that the all drivers are configured.
       if ( drivers_[0].isConfigured() == true
         && drivers_[1].isConfigured() == true
-        // && drivers_[2].isConfigured() == true
-        // && drivers_[3].isConfigured() == true
+        && drivers_[2].isConfigured() == true
+        && drivers_[3].isConfigured() == true
         && active_ == false)
       {
         active_ = true;
@@ -270,15 +274,17 @@ public:
   }
 
 private:
+  ros::NodeHandle nh_;
+  ros::NodeHandle nh_private_;
   puma_motor_driver::Gateway& gateway_;
   std::vector<puma_motor_driver::Driver> drivers_;
 
   std::vector<requestFeedback> feedbacks_;
 
-  uint8_t freq_;
+  int freq_;
+  int encoder_cpr_;
+  double gear_ratio_;
   uint8_t status_count_;
-
-  uint16_t encoder_counts_;
 
   bool active_;
   uint8_t desired_mode_;
