@@ -53,6 +53,11 @@ public:
     drivers_.push_back(puma_motor_driver::Driver(gateway_, 2, "rl"));
     // drivers_.push_back(puma_motor_driver::Driver(gateway_, 4, "rr"));
 
+    feedbacks_.push_back(&puma_motor_driver::Driver::requestFeedbackDutyCycle);
+    feedbacks_.push_back(&puma_motor_driver::Driver::requestFeedbackCurrent);
+    feedbacks_.push_back(&puma_motor_driver::Driver::requestFeedbackPosition);
+    feedbacks_.push_back(&puma_motor_driver::Driver::requestFeedbackSpeed);
+
     cmd_sub_ = nh.subscribe("cmd", 1, &MultiControllerNode::cmdCallback, this);
     status_pub_ = nh.advertise<puma_motor_msgs::MultiStatus>("status", 5);
     feedback_pub_ = nh.advertise<puma_motor_msgs::MultiFeedback>("feedback", 5);
@@ -182,43 +187,15 @@ public:
         ros::Duration(0.006).sleep();
       }*/
 
-      for (int i = 0; i < 4; i++)
+      BOOST_FOREACH(requestFeedback feedbackFc, feedbacks_)
       {
         BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
         {
-          CALL_MEMBER_FN(driver,feedbacks[i])();
-          gateway_.sendAllQueued();
-          ros::Duration(0.001).sleep();
+          (driver.*feedbackFc)();
         }
-      }
-
-      /*BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
-      {
-        driver.requestFeedback[0]();
         gateway_.sendAllQueued();
         ros::Duration(0.001).sleep();
       }
-
-      BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
-      {
-        driver.requestFeedbackCurrent();
-        gateway_.sendAllQueued();
-        ros::Duration(0.001).sleep();
-      }
-
-      BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
-      {
-        driver.requestFeedbackSpeed();
-        gateway_.sendAllQueued();
-        ros::Duration(0.001).sleep();
-      }
-
-      BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
-      {
-        driver.requestFeedbackPosition();
-        gateway_.sendAllQueued();
-        ros::Duration(0.001).sleep();
-      }*/
 
       // Process all received messages through the connected driver instances.
       puma_motor_driver::Message recv_msg;
@@ -304,17 +281,12 @@ private:
   puma_motor_driver::Gateway& gateway_;
   std::vector<puma_motor_driver::Driver> drivers_;
 
-  requestFeedback feedbacks[4] = {
-    &puma_motor_driver::Driver::requestFeedbackDutyCycle,
-    &puma_motor_driver::Driver::requestFeedbackCurrent,
-    &puma_motor_driver::Driver::requestFeedbackPosition,
-    &puma_motor_driver::Driver::requestFeedbackSpeed
-  };
+  std::vector<requestFeedback> feedbacks_;
 
   uint8_t freq_;
   uint8_t status_count_;
 
-  uint16_t encoder_counts_;
+  uint16_t encoder_countss_;
 
   bool active_;
   uint8_t desired_mode_;
