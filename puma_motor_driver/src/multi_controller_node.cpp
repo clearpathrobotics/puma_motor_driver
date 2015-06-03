@@ -35,7 +35,6 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 #include "sensor_msgs/JointState.h"
 #include "serial/serial.h"
 
-#define CALL_MEMBER_FN(object,ptrToMember)  ((object).*(ptrToMember))
 
 class MultiControllerNode
 {
@@ -68,12 +67,12 @@ public:
     status_pub_ = nh_.advertise<puma_motor_msgs::MultiStatus>("status", 5);
     feedback_pub_ = nh_.advertise<puma_motor_msgs::MultiFeedback>("feedback", 5);
 
-    nh_private_.param("gear_ratio", gear_ratio_, 79.0);
+    nh_private_.param<double>("gear_ratio", gear_ratio_, 79.0);
     nh_private_.param<int>("encoder_cpr", encoder_cpr_, 1024);
     nh_private_.param<int>("frequency", freq_, 20);
 
-    status_msg_.drivers.resize(2);
-    feedback_msg_.drivers_feedback.resize(2);
+    status_msg_.drivers.resize(4);
+    feedback_msg_.drivers_feedback.resize(4);
 
     BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
     {
@@ -90,7 +89,7 @@ public:
     if (active_)
     {
       // TODO: Match joint names rather than assuming indexes align.
-      for (int joint = 0; joint < 2; joint++)
+      for (int joint = 0; joint < 4; joint++)
       {
         if (desired_mode_ == puma_motor_msgs::Status::MODE_VOLTAGE)
         {
@@ -137,6 +136,7 @@ public:
 
       if (active_)
       {
+        // Checks to see if power flag has been reset for each driver
         BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
         {
           if ( driver.lastPower() != 0)
@@ -163,7 +163,6 @@ public:
       ros::spinOnce();
       gateway_.sendAllQueued();
       ros::Duration(0.005).sleep();
-
 
       // Temp hack -> TODO: fix this.
       switch(status_count_)
@@ -278,16 +277,14 @@ private:
   ros::NodeHandle nh_private_;
   puma_motor_driver::Gateway& gateway_;
   std::vector<puma_motor_driver::Driver> drivers_;
-
   std::vector<requestFeedback> feedbacks_;
 
   int freq_;
   int encoder_cpr_;
   double gear_ratio_;
   uint8_t status_count_;
-
-  bool active_;
   uint8_t desired_mode_;
+  bool active_;
 
   ros::Subscriber cmd_sub_;
 

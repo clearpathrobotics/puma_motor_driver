@@ -80,7 +80,7 @@ public:
    */
   void commandDutyCycle(float cmd);
 
-  void commandSpeed(float cmd);
+  void commandSpeed(double cmd);
   //void currentSet(float cmd);
   //void positionSet(float cmd);
   //void neutralSet();
@@ -88,19 +88,19 @@ public:
   void setEncoderCPR(uint16_t encoder_cpr);
   void setGearRatio(float gear_ratio);
   void setMode(uint8_t mode);
-  void setMode(uint8_t mode, float p, float i, float d);
-  void setGains(float p, float i, float d);
+  void setMode(uint8_t mode, double p, double i, double d);
+  void setGains(double p, double i, double d);
 
+  uint8_t lastFault();
+  uint8_t lastPower();
+  uint8_t lastMode();
   float lastDutyCycle();
   float lastBusVoltage();
   float lastCurrent();
+  float lastOutVoltage();
   float lastTemperature();
   double lastPosition();
   double lastSpeed();
-  uint8_t lastFault();
-  uint8_t lastPower();
-  float lastOutVoltage();
-  uint8_t lastMode();
   double lastSetpoint();
 
   void configureParams();
@@ -112,9 +112,9 @@ public:
   uint8_t spdEncoderRef();
   uint16_t encoderCounts();
 
-  float getP();
-  float getI();
-  float getD();
+  double getP();
+  double getI();
+  double getD();
 
 
   float statusDutyCycleGet();
@@ -142,9 +142,9 @@ private:
   uint8_t state_;
 
   uint8_t control_mode_;
-  float gain_p_;
-  float gain_i_;
-  float gain_d_;
+  double gain_p_;
+  double gain_i_;
+  double gain_d_;
   uint16_t encoder_cpr_;
   float gear_ratio_;
 

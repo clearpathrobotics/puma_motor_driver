@@ -115,7 +115,7 @@ void Driver::commandDutyCycle(float cmd)
   sendFixed8x8((LM_API_VOLT_SET | device_number_), cmd);
 }
 
-void Driver::commandSpeed(float cmd)
+void Driver::commandSpeed(double cmd)
 {
   // Converting from rad/s to RPM through the gearbox.
   sendFixed16x16((LM_API_SPD_SET | device_number_), (cmd * ((60*gear_ratio_)/(2*M_PI))));
@@ -365,7 +365,7 @@ bool Driver::isConfigured()
   return configured_;
 }
 
-void Driver::setGains(float p, float i, float d)
+void Driver::setGains(double p, double i, double d)
 {
   gain_p_ = p;
   gain_i_ = i;
@@ -389,7 +389,7 @@ void Driver::setMode(uint8_t mode)
   }
 }
 
-void Driver::setMode(uint8_t mode, float p, float i, float d)
+void Driver::setMode(uint8_t mode, double p, double i, double d)
 {
   if(mode == puma_motor_msgs::Status::MODE_VOLTAGE)
   {
@@ -599,19 +599,19 @@ uint16_t Driver::encoderCounts()
   return (uint16_t)field->data[0] | (uint16_t)field->data[1] << 8;
 }
 
-float Driver::getP()
+double Driver::getP()
 {
   StatusField* field = statusFieldForMessage(Message(LM_API_SPD_PC));
   return field->interpretFixed16x16();
 }
 
-float Driver::getI()
+double Driver::getI()
 {
   StatusField* field = statusFieldForMessage(Message(LM_API_SPD_IC));
   return field->interpretFixed16x16();
 }
 
-float Driver::getD()
+double Driver::getD()
 {
   StatusField* field = statusFieldForMessage(Message(LM_API_SPD_DC));
   return field->interpretFixed16x16();
