@@ -85,7 +85,7 @@ void Driver::sendFixed8x8(uint32_t id, float value)
   Message msg;
   msg.id = id;
   msg.len = 2;
-  int16_t output_value = (int16_t)(255 * value);
+  int16_t output_value = (int16_t)(float(1<<8) * value);
   memcpy(msg.data, &output_value, msg.len);
   gateway_.queue(msg);
 }
@@ -95,7 +95,7 @@ void Driver::sendFixed16x16(uint32_t id, double value)
   Message msg;
   msg.id = id;
   msg.len = 4;
-  int32_t output_value = (int32_t)(65536 * value);
+  int32_t output_value = (int32_t)(double(1<<16) * value);
   memcpy(msg.data, &output_value, msg.len);
   gateway_.queue(msg);
 }
@@ -118,7 +118,7 @@ void Driver::commandDutyCycle(float cmd)
 void Driver::commandSpeed(double cmd)
 {
   // Converting from rad/s to RPM through the gearbox.
-  sendFixed16x16((LM_API_SPD_SET | device_number_), (cmd * ((60*gear_ratio_)/(2*M_PI))));
+  sendFixed16x16((LM_API_SPD_SET | device_number_), (cmd * (( 60 * gear_ratio_) / ( 2 * M_PI))));
 }
 
 void Driver::verifyParams()
@@ -190,7 +190,7 @@ void Driver::verifyParams()
         if (control_mode_ != puma_motor_msgs::Status::MODE_VOLTAGE)
         {
           state_++;
-          ROS_DEBUG("Dev: %i  was set toa close loop control mode.", device_number_);
+          ROS_DEBUG("Dev: %i  was set to a close loop control mode.", device_number_);
         }
         else
         {
@@ -268,7 +268,7 @@ void Driver::verifyParams()
   }
   if (state_ == 200)
   {
-    ROS_DEBUG("Dev: %i all parameters verified.", device_number_);
+    ROS_INFO("Dev: %i all parameters verified.", device_number_);
     configured_ = true;
     state_ = 255;
   }
@@ -509,7 +509,6 @@ float Driver::lastBusVoltage()
 float Driver::lastCurrent()
 {
   StatusField* field = statusFieldForMessage(Message(LM_API_STATUS_CURRENT));
-
   return field->interpretFixed8x8();
 }
 

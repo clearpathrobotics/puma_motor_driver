@@ -149,6 +149,33 @@ public:
             }
           }
         }
+        // Queue data requests for the drivers in order to assemble an amalgamated status message.
+        BOOST_FOREACH(requestFeedback feedbackFc, feedbacks_)
+        {
+          BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
+          {
+            (driver.*feedbackFc)();
+          }
+          gateway_.sendAllQueued();
+          ros::Duration(0.001).sleep();
+        }
+        // Temp hack -> TODO: fix this.
+        switch(status_count_)
+        {
+          case 1:
+            drivers_[0].requestStatusMessages();
+            break;
+          case 6:
+            drivers_[1].requestStatusMessages();
+            break;
+          case 11:
+            drivers_[2].requestStatusMessages();
+            break;
+          case 16:
+            drivers_[3].requestStatusMessages();
+            break;
+        }
+
       }
       else
       {
@@ -164,33 +191,6 @@ public:
       gateway_.sendAllQueued();
       ros::Duration(0.005).sleep();
 
-      // Temp hack -> TODO: fix this.
-      switch(status_count_)
-      {
-        case 1:
-          drivers_[0].requestStatusMessages();
-          break;
-        case 6:
-          drivers_[1].requestStatusMessages();
-          break;
-        case 11:
-          drivers_[2].requestStatusMessages();
-          break;
-        case 16:
-          drivers_[3].requestStatusMessages();
-          break;
-      }
-
-      // Queue data requests for the drivers in order to assemble an amalgamated status message.
-      BOOST_FOREACH(requestFeedback feedbackFc, feedbacks_)
-      {
-        BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
-        {
-          (driver.*feedbackFc)();
-        }
-        gateway_.sendAllQueued();
-        ros::Duration(0.001).sleep();
-      }
 
       // Process all received messages through the connected driver instances.
       puma_motor_driver::Message recv_msg;
