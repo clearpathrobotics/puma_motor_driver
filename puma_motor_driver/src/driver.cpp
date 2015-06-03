@@ -85,7 +85,7 @@ void Driver::sendFixed8x8(uint32_t id, float value)
   Message msg;
   msg.id = id;
   msg.len = 2;
-  int16_t output_value = (int16_t)(32767 * value);
+  int16_t output_value = (int16_t)(255 * value);
   memcpy(msg.data, &output_value, msg.len);
   gateway_.queue(msg);
 }
@@ -200,7 +200,7 @@ void Driver::verifyParams()
       }
       break;
     case 7:
-      if (fabs(getP() - gain_p_) < 0.00001)
+      if (fabs(getP() - gain_p_) < double(1<<16))
       {
         state_++;
         ROS_DEBUG("Dev: %i P gain constant was set to %f and %f was requested.", device_number_, getP(), gain_p_);
@@ -222,7 +222,7 @@ void Driver::verifyParams()
       }
       break;
     case 8:
-      if (fabs(getI() - gain_i_) < 0.00001)
+      if (fabs(getI() - gain_i_) < double(1<<16))
       {
         state_++;
         ROS_DEBUG("Dev: %i I gain constant was set to %f and %f was requested.", device_number_, getI(), gain_i_);
@@ -244,7 +244,7 @@ void Driver::verifyParams()
       }
       break;
     case 9:
-      if (fabs(getD() - gain_d_) < 0.00001)
+      if (fabs(getD() - gain_d_) < double(1<<16))
       {
         state_ = 200;
         ROS_DEBUG("Dev: %i D gain constant was set to %f and %f was requested.", device_number_, getD(), gain_d_);
@@ -425,7 +425,7 @@ void Driver::clearStatusCache()
   memset(status_fields_, 0, sizeof(status_fields_));
 }
 
-bool Driver::requestStatusMessages()
+void Driver::requestStatusMessages()
 {
   gateway_.queue(Message(LM_API_STATUS_VOLTBUS | device_number_));
   gateway_.queue(Message(LM_API_STATUS_TEMP    | device_number_));
@@ -433,19 +433,15 @@ bool Driver::requestStatusMessages()
   gateway_.queue(Message(LM_API_STATUS_POWER   | device_number_));
   gateway_.queue(Message(LM_API_STATUS_VOUT    | device_number_));
   gateway_.queue(Message(LM_API_STATUS_CMODE   | device_number_));
-
-  return true;
 }
 
-bool Driver::requestFeedbackMessages()
+void Driver::requestFeedbackMessages()
 {
   gateway_.queue(Message(LM_API_STATUS_VOLTOUT | device_number_));
   gateway_.queue(Message(LM_API_STATUS_CURRENT | device_number_));
   gateway_.queue(Message(LM_API_STATUS_POS     | device_number_));
   gateway_.queue(Message(LM_API_STATUS_SPD     | device_number_));
   gateway_.queue(Message(LM_API_SPD_SET        | device_number_));
-
-  return true;
 }
 void Driver::requestFeedbackDutyCycle()
 {
@@ -513,6 +509,7 @@ float Driver::lastBusVoltage()
 float Driver::lastCurrent()
 {
   StatusField* field = statusFieldForMessage(Message(LM_API_STATUS_CURRENT));
+
   return field->interpretFixed8x8();
 }
 

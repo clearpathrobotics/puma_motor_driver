@@ -89,7 +89,7 @@ public:
     if (active_)
     {
       // TODO: Match joint names rather than assuming indexes align.
-      for (int joint = 0; joint < 4; joint++)
+      for (int joint = 0; joint < 2; joint++)
       {
         if (desired_mode_ == puma_motor_msgs::Status::MODE_VOLTAGE)
         {
