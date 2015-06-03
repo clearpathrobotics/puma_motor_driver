@@ -107,6 +107,7 @@ public:
   void verifyParams();
   bool isConfigured();
   void resetConfiguration();
+  void updateGains();
 
   uint8_t posEncoderRef();
   uint8_t spdEncoderRef();

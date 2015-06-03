@@ -126,14 +126,14 @@ void Driver::verifyParams()
   switch(state_)
   {
     case 0:
-      ROS_INFO("Dev: %i starting to verify parameters.", device_number_);
+      ROS_DEBUG("Dev: %i starting to verify parameters.", device_number_);
       state_++;
       break;
     case 1:
       if (lastPower() == 0)
       {
         state_++;
-        ROS_INFO("Dev: %i cleared power flag.", device_number_);
+        ROS_DEBUG("Dev: %i cleared power flag.", device_number_);
       }
       else
       {
@@ -144,7 +144,7 @@ void Driver::verifyParams()
       if (posEncoderRef() == LM_REF_ENCODER)
       {
         state_++;
-        ROS_INFO("Dev: %i set position encoder reference.", device_number_);
+        ROS_DEBUG("Dev: %i set position encoder reference.", device_number_);
       }
       else
       {
@@ -155,7 +155,7 @@ void Driver::verifyParams()
       if (spdEncoderRef() == LM_REF_QUAD_ENCODER)
       {
         state_++;
-        ROS_INFO("Dev: %i set speed encoder reference.", device_number_);
+        ROS_DEBUG("Dev: %i set speed encoder reference.", device_number_);
       }
       else
       {
@@ -166,7 +166,7 @@ void Driver::verifyParams()
       if (encoderCounts() == encoder_cpr_)
       {
         state_++;
-        ROS_INFO("Dev: %i set encoder counts to %i.", device_number_, encoder_cpr_);
+        ROS_DEBUG("Dev: %i set encoder counts to %i.", device_number_, encoder_cpr_);
       }
       else
       {
@@ -177,7 +177,7 @@ void Driver::verifyParams()
       if (lastMode() == puma_motor_msgs::Status::MODE_SPEED)
       {
         state_++;
-        ROS_INFO("Dev: %i entered a close-loop control mode.", device_number_);
+        ROS_DEBUG("Dev: %i entered a close-loop control mode.", device_number_);
       }
       else
       {
@@ -190,12 +190,12 @@ void Driver::verifyParams()
         if (control_mode_ != puma_motor_msgs::Status::MODE_VOLTAGE)
         {
           state_++;
-          ROS_INFO("Dev: %i  was set to speed control mode.", device_number_);
+          ROS_DEBUG("Dev: %i  was set toa close loop control mode.", device_number_);
         }
         else
         {
           state_ = 200;
-          ROS_INFO("Dev: %i was set to voltage control mode.", device_number_);
+          ROS_DEBUG("Dev: %i was set to voltage control mode.", device_number_);
         }
       }
       break;
@@ -203,7 +203,7 @@ void Driver::verifyParams()
       if (fabs(getP() - gain_p_) < 0.00001)
       {
         state_++;
-        ROS_INFO("Dev: %i P gain constant was set to %f.", device_number_, getP());
+        ROS_DEBUG("Dev: %i P gain constant was set to %f and %f was requested.", device_number_, getP(), gain_p_);
       }
       else
       {
@@ -225,7 +225,7 @@ void Driver::verifyParams()
       if (fabs(getI() - gain_i_) < 0.00001)
       {
         state_++;
-        ROS_INFO("Dev: %i I gain constant was set to %f.", device_number_, getI());
+        ROS_DEBUG("Dev: %i I gain constant was set to %f and %f was requested.", device_number_, getI(), gain_i_);
       }
       else
       {
@@ -247,7 +247,7 @@ void Driver::verifyParams()
       if (fabs(getD() - gain_d_) < 0.00001)
       {
         state_ = 200;
-        ROS_INFO("Dev: %i D gain constant was set to %f.", device_number_, getD());
+        ROS_DEBUG("Dev: %i D gain constant was set to %f and %f was requested.", device_number_, getD(), gain_d_);
       }
       else
       {
@@ -268,7 +268,7 @@ void Driver::verifyParams()
   }
   if (state_ == 200)
   {
-    ROS_INFO("Dev: %i all parameters verified.", device_number_);
+    ROS_DEBUG("Dev: %i all parameters verified.", device_number_);
     configured_ = true;
     state_ = 255;
   }
@@ -370,6 +370,11 @@ void Driver::setGains(double p, double i, double d)
   gain_p_ = p;
   gain_i_ = i;
   gain_d_ = d;
+
+  if (configured_)
+  {
+    updateGains();
+  }
 }
 
 void Driver::setMode(uint8_t mode)
@@ -403,13 +408,13 @@ void Driver::setMode(uint8_t mode, double p, double i, double d)
   else
   {
     control_mode_ = mode;
-    setGains(p,i,d);
-    ROS_INFO("Dev: %i mode set toa closed-loop control with PID gains of P:%f, I:%f and D:%f.",
-      device_number_, gain_p_, gain_i_, gain_d_);
     if (configured_)
     {
       resetConfiguration();
     }
+    setGains(p,i,d);
+    ROS_INFO("Dev: %i mode set to a closed-loop control with PID gains of P:%f, I:%f and D:%f.",
+      device_number_, gain_p_, gain_i_, gain_d_);
   }
 }
 
@@ -486,6 +491,13 @@ void Driver::resetConfiguration()
   configured_ = false;
   state_ = 0;
 }
+
+void Driver::updateGains()
+{
+  configured_ = false;
+  state_ = 7;
+}
+
 float Driver::lastDutyCycle()
 {
   StatusField* field = statusFieldForMessage(Message(LM_API_STATUS_VOLTOUT));
