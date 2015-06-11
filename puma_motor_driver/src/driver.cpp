@@ -36,6 +36,13 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 namespace puma_motor_driver
 {
 
+Driver::Driver(Gateway& gateway, uint8_t device_number, std::string device_name)
+  : gateway_(gateway), device_number_(device_number), device_name_(device_name),
+    configured_(false), state_(0), control_mode_(puma_motor_msgs::Status::MODE_SPEED),
+    gain_p_(1), gain_i_(0), gain_d_(0), encoder_cpr_(1), gear_ratio_(1)
+  {
+  }
+
 void Driver::processMessage(const Message& received_msg)
 {
 
@@ -78,17 +85,17 @@ void Driver::sendFixed8x8(uint32_t id, float value)
   Message msg;
   msg.id = id;
   msg.len = 2;
-  int16_t output_value = (int16_t)(32767 * value);
+  int16_t output_value = (int16_t)(float(1<<8) * value);
   memcpy(msg.data, &output_value, msg.len);
   gateway_.queue(msg);
 }
 
-void Driver::sendFixed16x16(uint32_t id, float value)
+void Driver::sendFixed16x16(uint32_t id, double value)
 {
   Message msg;
   msg.id = id;
   msg.len = 4;
-  int32_t output_value = (int32_t)(65536 * value);
+  int32_t output_value = (int32_t)(double(1<<16) * value);
   memcpy(msg.data, &output_value, msg.len);
   gateway_.queue(msg);
 }
@@ -108,10 +115,10 @@ void Driver::commandDutyCycle(float cmd)
   sendFixed8x8((LM_API_VOLT_SET | device_number_), cmd);
 }
 
-void Driver::commandSpeed(float cmd)
+void Driver::commandSpeed(double cmd)
 {
   // Converting from rad/s to RPM through the gearbox.
-  sendFixed16x16((LM_API_SPD_SET | device_number_), (cmd * ((60*gear_ratio_)/(2*M_PI))));
+  sendFixed16x16((LM_API_SPD_SET | device_number_), (cmd * (( 60 * gear_ratio_) / ( 2 * M_PI))));
 }
 
 void Driver::verifyParams()
@@ -119,14 +126,14 @@ void Driver::verifyParams()
   switch(state_)
   {
     case 0:
-      ROS_INFO("Dev: %i starting to verify parameters.", device_number_);
+      ROS_DEBUG("Dev: %i starting to verify parameters.", device_number_);
       state_++;
       break;
     case 1:
       if (lastPower() == 0)
       {
         state_++;
-        ROS_INFO("Dev: %i cleared power flag.", device_number_);
+        ROS_DEBUG("Dev: %i cleared power flag.", device_number_);
       }
       else
       {
@@ -137,7 +144,7 @@ void Driver::verifyParams()
       if (posEncoderRef() == LM_REF_ENCODER)
       {
         state_++;
-        ROS_INFO("Dev: %i set position encoder reference.", device_number_);
+        ROS_DEBUG("Dev: %i set position encoder reference.", device_number_);
       }
       else
       {
@@ -148,7 +155,7 @@ void Driver::verifyParams()
       if (spdEncoderRef() == LM_REF_QUAD_ENCODER)
       {
         state_++;
-        ROS_INFO("Dev: %i set speed encoder reference.", device_number_);
+        ROS_DEBUG("Dev: %i set speed encoder reference.", device_number_);
       }
       else
       {
@@ -159,7 +166,7 @@ void Driver::verifyParams()
       if (encoderCounts() == encoder_cpr_)
       {
         state_++;
-        ROS_INFO("Dev: %i set encoder counts to %i.", device_number_, encoder_cpr_);
+        ROS_DEBUG("Dev: %i set encoder counts to %i.", device_number_, encoder_cpr_);
       }
       else
       {
@@ -170,7 +177,7 @@ void Driver::verifyParams()
       if (lastMode() == puma_motor_msgs::Status::MODE_SPEED)
       {
         state_++;
-        ROS_INFO("Dev: %i entered a close-loop control mode.", device_number_);
+        ROS_DEBUG("Dev: %i entered a close-loop control mode.", device_number_);
       }
       else
       {
@@ -183,20 +190,20 @@ void Driver::verifyParams()
         if (control_mode_ != puma_motor_msgs::Status::MODE_VOLTAGE)
         {
           state_++;
-          ROS_INFO("Dev: %i  was set to speed control mode.", device_number_);
+          ROS_DEBUG("Dev: %i  was set to a close loop control mode.", device_number_);
         }
         else
         {
           state_ = 200;
-          ROS_INFO("Dev: %i was set to voltage control mode.", device_number_);
+          ROS_DEBUG("Dev: %i was set to voltage control mode.", device_number_);
         }
       }
       break;
     case 7:
-      if (fabs(getP() - gain_p_) < 0.00001)
+      if (fabs(getP() - gain_p_) < double(1<<16))
       {
         state_++;
-        ROS_INFO("Dev: %i P gain constant was set to %f.", device_number_, gain_p_);
+        ROS_DEBUG("Dev: %i P gain constant was set to %f and %f was requested.", device_number_, getP(), gain_p_);
       }
       else
       {
@@ -215,10 +222,10 @@ void Driver::verifyParams()
       }
       break;
     case 8:
-      if (fabs(getI() - gain_i_) < 0.00001)
+      if (fabs(getI() - gain_i_) < double(1<<16))
       {
         state_++;
-        ROS_INFO("Dev: %i I gain constant was set to %f.", device_number_, gain_i_);
+        ROS_DEBUG("Dev: %i I gain constant was set to %f and %f was requested.", device_number_, getI(), gain_i_);
       }
       else
       {
@@ -237,10 +244,10 @@ void Driver::verifyParams()
       }
       break;
     case 9:
-      if (getD() == gain_d_)
+      if (fabs(getD() - gain_d_) < double(1<<16))
       {
         state_ = 200;
-        ROS_INFO("Dev: %i D gain constant was set to %f.",device_number_, gain_d_);
+        ROS_DEBUG("Dev: %i D gain constant was set to %f and %f was requested.", device_number_, getD(), gain_d_);
       }
       else
       {
@@ -358,19 +365,28 @@ bool Driver::isConfigured()
   return configured_;
 }
 
-void Driver::setGains(float p, float i, float d)
+void Driver::setGains(double p, double i, double d)
 {
   gain_p_ = p;
   gain_i_ = i;
   gain_d_ = d;
+
+  if (configured_)
+  {
+    updateGains();
+  }
 }
 
 void Driver::setMode(uint8_t mode)
 {
   if(mode == puma_motor_msgs::Status::MODE_VOLTAGE)
   {
-    ROS_INFO("Dev: %i mode set to voltage control", device_number_);
     control_mode_ = mode;
+    ROS_INFO("Dev: %i mode set to voltage control.", device_number_);
+    if (configured_)
+    {
+      resetConfiguration();
+    }
   }
   else
   {
@@ -378,17 +394,27 @@ void Driver::setMode(uint8_t mode)
   }
 }
 
-void Driver::setMode(uint8_t mode, float p, float i, float d)
+void Driver::setMode(uint8_t mode, double p, double i, double d)
 {
   if(mode == puma_motor_msgs::Status::MODE_VOLTAGE)
   {
-    ROS_WARN("Dev: %i mode set to voltage control but PID gains are NOT needed.", device_number_);
+    control_mode_ = mode;
+    ROS_WARN("Dev: %i mode set to voltage control but PID gains are not needed.", device_number_);
+    if (configured_)
+    {
+      resetConfiguration();
+    }
   }
   else
   {
     control_mode_ = mode;
+    if (configured_)
+    {
+      resetConfiguration();
+    }
     setGains(p,i,d);
-    ROS_INFO("Dev: %i mode set to speed control with PID gains of P:%f, I:%f and D:%f", device_number_, gain_p_, gain_i_, gain_d_);
+    ROS_INFO("Dev: %i mode set to a closed-loop control with PID gains of P:%f, I:%f and D:%f.",
+      device_number_, gain_p_, gain_i_, gain_d_);
   }
 }
 
@@ -399,7 +425,7 @@ void Driver::clearStatusCache()
   memset(status_fields_, 0, sizeof(status_fields_));
 }
 
-bool Driver::requestStatusMessages()
+void Driver::requestStatusMessages()
 {
   gateway_.queue(Message(LM_API_STATUS_VOLTBUS | device_number_));
   gateway_.queue(Message(LM_API_STATUS_TEMP    | device_number_));
@@ -407,18 +433,53 @@ bool Driver::requestStatusMessages()
   gateway_.queue(Message(LM_API_STATUS_POWER   | device_number_));
   gateway_.queue(Message(LM_API_STATUS_VOUT    | device_number_));
   gateway_.queue(Message(LM_API_STATUS_CMODE   | device_number_));
-
-  return true;
 }
 
-bool Driver::requestFeedbackMessages()
+void Driver::requestFeedbackMessages()
 {
   gateway_.queue(Message(LM_API_STATUS_VOLTOUT | device_number_));
   gateway_.queue(Message(LM_API_STATUS_CURRENT | device_number_));
   gateway_.queue(Message(LM_API_STATUS_POS     | device_number_));
   gateway_.queue(Message(LM_API_STATUS_SPD     | device_number_));
+  gateway_.queue(Message(LM_API_SPD_SET        | device_number_));
+}
+void Driver::requestFeedbackDutyCycle()
+{
+  gateway_.queue(Message(LM_API_STATUS_VOLTOUT | device_number_));
+}
 
-  return true;
+void Driver::requestFeedbackCurrent()
+{
+  gateway_.queue(Message(LM_API_STATUS_CURRENT | device_number_));
+}
+
+void Driver::requestFeedbackPosition()
+{
+  gateway_.queue(Message(LM_API_STATUS_POS | device_number_));
+}
+
+void Driver::requestFeedbackSpeed()
+{
+  gateway_.queue(Message(LM_API_STATUS_SPD | device_number_));
+}
+
+void Driver::requestFeedbackSetpoint()
+{
+  switch(control_mode_)
+  {
+    case puma_motor_msgs::Status::MODE_CURRENT:
+      gateway_.queue(Message(LM_API_ICTRL_SET | device_number_));
+      break;
+    case puma_motor_msgs::Status::MODE_POSITION:
+      gateway_.queue(Message(LM_API_POS_SET | device_number_));
+      break;
+    case puma_motor_msgs::Status::MODE_SPEED:
+      gateway_.queue(Message(LM_API_SPD_SET | device_number_));
+      break;
+    case puma_motor_msgs::Status::MODE_VOLTAGE:
+      gateway_.queue(Message(LM_API_VOLT_SET | device_number_));
+      break;
+  };
 }
 
 void Driver::resetConfiguration()
@@ -426,6 +487,13 @@ void Driver::resetConfiguration()
   configured_ = false;
   state_ = 0;
 }
+
+void Driver::updateGains()
+{
+  configured_ = false;
+  state_ = 7;
+}
+
 float Driver::lastDutyCycle()
 {
   StatusField* field = statusFieldForMessage(Message(LM_API_STATUS_VOLTOUT));
@@ -444,22 +512,16 @@ float Driver::lastCurrent()
   return field->interpretFixed8x8();
 }
 
-float Driver::lastPosition()
+double Driver::lastPosition()
 {
   StatusField* field = statusFieldForMessage(Message(LM_API_STATUS_POS));
-  return (field->interpretFixed16x16() * ((2*M_PI)/gear_ratio_));  //  Convert rev to rad
+  return (field->interpretFixed16x16() * ((2 * M_PI) / gear_ratio_));  // Convert rev to rad
 }
 
-float Driver::statusSpeedGet()
-{
-  StatusField* field = statusFieldForMessage(Message(LM_API_SPD_SET));
-  return (field->interpretFixed16x16() * ((2*M_PI)/(gear_ratio_*60)));  //  Convert RPM to rad/s
-}
-
-float Driver::lastSpeed()
+double Driver::lastSpeed()
 {
   StatusField* field = statusFieldForMessage(Message(LM_API_STATUS_SPD));
-  return field->interpretFixed16x16() * ((2*M_PI)/(gear_ratio_*60));  //  Convert RPM to rad/s
+  return field->interpretFixed16x16() * ((2 * M_PI) / (gear_ratio_ * 60));  // Convert RPM to rad/s
 }
 
 uint8_t Driver::lastFault()
@@ -486,6 +548,47 @@ float Driver::lastOutVoltage()
   return field->interpretFixed8x8();
 }
 
+double Driver::lastSetpoint()
+{
+  switch (control_mode_)
+  {
+    case puma_motor_msgs::Status::MODE_CURRENT:
+      return statusCurrentGet();
+      break;
+    case puma_motor_msgs::Status::MODE_POSITION:
+      return statusPositionGet();
+      break;
+    case puma_motor_msgs::Status::MODE_SPEED:
+      return statusSpeedGet();
+      break;
+    case puma_motor_msgs::Status::MODE_VOLTAGE:
+      return statusDutyCycleGet();
+      break;
+  }
+}
+double Driver::statusSpeedGet()
+{
+  StatusField* field = statusFieldForMessage(Message(LM_API_SPD_SET));
+  return (field->interpretFixed16x16() * ((2 * M_PI) / (gear_ratio_ * 60)));  // Convert RPM to rad/s
+}
+
+float Driver::statusDutyCycleGet()
+{
+  StatusField* field = statusFieldForMessage(Message(LM_API_VOLT_SET));
+  return field->interpretFixed8x8() / 128.0;
+}
+
+float Driver::statusCurrentGet()
+{
+  StatusField* field = statusFieldForMessage(Message(LM_API_ICTRL_SET));
+  return field->interpretFixed8x8();
+}
+double Driver::statusPositionGet()
+{
+  StatusField* field = statusFieldForMessage(Message(LM_API_POS_SET));
+  return (field->interpretFixed16x16() * (( 2 * M_PI) / gear_ratio_));  // Convert rev to rad
+}
+
 uint8_t Driver::posEncoderRef()
 {
   StatusField* field = statusFieldForMessage(Message(LM_API_POS_REF));
@@ -504,19 +607,19 @@ uint16_t Driver::encoderCounts()
   return (uint16_t)field->data[0] | (uint16_t)field->data[1] << 8;
 }
 
-float Driver::getP()
+double Driver::getP()
 {
   StatusField* field = statusFieldForMessage(Message(LM_API_SPD_PC));
   return field->interpretFixed16x16();
 }
 
-float Driver::getI()
+double Driver::getI()
 {
   StatusField* field = statusFieldForMessage(Message(LM_API_SPD_IC));
   return field->interpretFixed16x16();
 }
 
-float Driver::getD()
+double Driver::getD()
 {
   StatusField* field = statusFieldForMessage(Message(LM_API_SPD_DC));
   return field->interpretFixed16x16();

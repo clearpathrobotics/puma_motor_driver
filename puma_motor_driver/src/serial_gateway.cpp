@@ -28,6 +28,14 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 namespace puma_motor_driver
 {
 
+SerialGateway::SerialGateway(serial::Serial& serial) : serial_(serial),
+  write_buffer_index_(0), read_buffer_index_(0), read_buffer_len_(0)
+{
+  serial::Timeout to(serial::Timeout::simpleTimeout(50));
+  serial_.setTimeout(to);
+  serial_.setBaudrate(115200);
+}
+
 bool SerialGateway::connect()
 {
   if (!serial_.isOpen())

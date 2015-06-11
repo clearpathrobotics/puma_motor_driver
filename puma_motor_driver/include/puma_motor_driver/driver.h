@@ -39,88 +39,268 @@ class Message;
 class Driver
 {
 public:
-  Driver(Gateway& gateway, uint8_t device_number, std::string device_name)
-    : gateway_(gateway), device_number_(device_number), device_name_(device_name),
-      configured_(false), state_(0), control_mode_(puma_motor_msgs::Status::MODE_SPEED),
-      gain_p_(1), gain_i_(0), gain_d_(0), encoder_cpr_(1), gear_ratio_(1)
-    {
-    }
+  Driver(Gateway& gateway, uint8_t device_number, std::string device_name);
 
   void processMessage(const Message& received_msg);
 
-  void sendUint8(uint32_t id, uint8_t value);
-  void sendUint16(uint32_t id, uint16_t value);
-  void sendFixed8x8(uint32_t id, float value);
-  void sendFixed16x16(uint32_t id, float value);
-
-
   /**
    * Sends messages to the motor controller requesting all missing elements to
    * populate the cache of status data. Returns true if any messages were sent,
    * false if the cache is already complete.
    */
-  bool requestStatusMessages();
+  void requestStatusMessages();
 
   /**
    * Sends messages to the motor controller requesting all missing elements to
-   * populate the cache of status data. Returns true if any messages were sent,
+   * populate the cache of feedback data. Returns true if any messages were sent,
    * false if the cache is already complete.
    */
-  bool requestFeedbackMessages();
-
+  void requestFeedbackMessages();
+  /**
+   * Sends a message to the motor controller requesting the instantaneous duty cycle to
+   * populate the cache of feedback data.
+   */
+  void requestFeedbackDutyCycle();
+  /**
+   * Sends a message to the motor controller requesting the instantaneous current consumption to
+   * populate the cache of feedback data.
+   */
+  void requestFeedbackCurrent();
+  /**
+   * Sends a message to the motor controller requesting the instantaneous angular distance to
+   * populate the cache of feedback data.
+   */
+  void requestFeedbackPosition();
+  /**
+   * Sends a message to the motor controller requesting the instantaneous angular speed to
+   * populate the cache of feedback data.
+   */
+  void requestFeedbackSpeed();
+  /**
+   * Sends a message to the motor controller requesting the instantaneous set point of the
+   * current control mode to populate the cache of feedback data.
+   */
+  void requestFeedbackSetpoint();
   /**
    * Clear the received flags from the status cache, in preparation for the next
    * request batch to go out.
    */
   void clearStatusCache();
-
   /**
-   * Switch to open-loop voltage control, and command the supplied value.
+   * Command the supplied value in open-loop voltage control.
    *
    * @param[in] cmd Value to command, ranging from -1.0 to 1.0, where zero is neutral.
    */
   void commandDutyCycle(float cmd);
-
-  void commandSpeed(float cmd);
+  /**
+   * Command the desired speed set-point in close-loop speed control.
+   *
+   * @param[in] cmd Value to command in rad/s.
+   */
+  void commandSpeed(double cmd);
   //void currentSet(float cmd);
   //void positionSet(float cmd);
   //void neutralSet();
 
+  /**
+   * Set the encoders resolution in counts per rev.
+   *
+   * @param[in] encoder_cpr Value to set.
+   */
   void setEncoderCPR(uint16_t encoder_cpr);
+  /**
+   * Set the gear ratio of the motors.
+   *
+   * @param[in] gear_ratio Value to set.
+   */
   void setGearRatio(float gear_ratio);
+  /**
+   * Set the control mode of the motor drivers.
+   *
+   * @param[in] mode Value to set.
+   */
   void setMode(uint8_t mode);
-  void setMode(uint8_t mode, float p, float i, float d);
-  void setGains(float p, float i, float d);
+  /**
+   * Set the control mode of the motor drivers
+   * with PID gains for close loop control.
+   *
+   * @param[in] mode Value to set.
+   * @param[in] p Value to set.
+   * @param[in] i Value to set.
+   * @param[in] d Value to set.
+   */
+  void setMode(uint8_t mode, double p, double i, double d);
+  /**
+   * Set the control mode's PID gains for close loop control.
+   *
+   * @param[in] p Value to set.
+   * @param[in] i Value to set.
+   * @param[in] d Value to set.
+   */
+  void setGains(double p, double i, double d);
 
-  float lastDutyCycle();
-  float lastBusVoltage();
-  float lastCurrent();
-  float lastTemperature();
-  float lastPosition();
-  float lastSpeed();
+  /**
+   * Process the last received fault response.
+   *
+   * @return state of fault status.
+   */
   uint8_t lastFault();
+  /**
+   * Process the last received power response.
+   *
+   * @return state of power status.
+   */
   uint8_t lastPower();
-  float lastOutVoltage();
+  /**
+   * Process the last received mode response.
+   *
+   * @return current mode of motor driver.
+   */
   uint8_t lastMode();
+  /**
+   * Process the last received duty cycle response.
+   *
+   * @return value of the instantaneous duty cycle.
+   */
+  float lastDutyCycle();
+  /**
+   * Process the last received bus voltage response.
+   *
+   * @return value of the instantaneous bus voltage.
+   */
+  float lastBusVoltage();
+  /**
+   * Process the last received current response.
+   *
+   * @return value of the instantaneous current.
+   */
+  float lastCurrent();
+  /**
+   * Process the last received out voltage response.
+   *
+   * @return value of the instantaneous out voltage.
+   */
+  float lastOutVoltage();
+  /**
+   * Process the last received temperature response.
+   *
+   * @return value of the instantaneous temperature.
+   */
+  float lastTemperature();
+  /**
+   * Process the last received travel response.
+   *
+   * @return value of the instantaneous angular position.
+   */
+  double lastPosition();
+  /**
+   * Process the last received speed response.
+   *
+   * @return value of the instantaneous angular speed.
+   */
+  double lastSpeed();
+  /**
+   * Process the last received set-point response
+   * for the current control mode.
+   *
+   * @return value of the set-point response.
+   */
+  double lastSetpoint();
 
+  /**
+   * The requesting part of the state machine that sends a message to the
+   * motor controller requesting a parameter be set.
+   */
   void configureParams();
+  /**
+   * The verifying part of the state machine that checks the response of
+   * the motor controller to ensure the value was set.
+   */
   void verifyParams();
+  /**
+   * Gets if the driver has been configured.
+   *
+   * @return bool if driver is configured.
+   */
   bool isConfigured();
   void resetConfiguration();
+  /**
+   * Reset the configured flag to restart the verification process.
+   */
+  void updateGains();
+  /**
+   * Updates the PID gains.
+   */
 
+  /**
+   * Process the last received position encoder reference response
+   *
+   * @return value of the reference response.
+   */
   uint8_t posEncoderRef();
+  /**
+   * Process the last received speed encoder reference response
+   *
+   * @return value of the reference response.
+   */
   uint8_t spdEncoderRef();
+  /**
+   * Process the last received encoder counts response
+   *
+   * @return value of the encoder counts.
+   */
   uint16_t encoderCounts();
 
-  float getP();
-  float getI();
-  float getD();
+  /**
+   * Process the last received P gain
+   * for the current control mode.
+   *
+   * @return value of the P gain response.
+   */
+  double getP();
+  /**
+   * Process the last received I gain
+   * for the current control mode.
+   *
+   * @return value of the I gain response.
+   */
+  double getI();
+  /**
+   * Process the last received D gain
+   * for the current control mode.
+   *
+   * @return value of the D gain response.
+   */
+  double getD();
 
-  /**  **CURRENTLY NOT USED**
-   * Return the current duty cycle of the motor driver's h-bridge from the status cache.
+  /**
+   * Process the last received set-point response
+   * in voltage open-loop control.
+   *
+   * @return value of the set-point response.
    */
   float statusDutyCycleGet();
-  float statusSpeedGet();
+  /**
+   * Process the last received set-point response
+   * in speed closed-loop control.
+   *
+   * @return value of the set-point response.
+   */
+  double statusSpeedGet();
+  /**
+   * Process the last received set-point response
+   * in currrent closed-loop control.
+   *
+   * @return value of the set-point response.
+   */
+  float statusCurrentGet();
+  /**
+   * Process the last received set-point response
+   * in position closed-loop control.
+   *
+   * @return value of the set-point response.
+   */
+  double statusPositionGet();
 
   /** Assignment operator, necessary on GCC 4.8 to copy instances
    *  into a vector. */
@@ -133,6 +313,25 @@ public:
 
   uint8_t deviceNumber() { return device_number_; }
 
+  // Only used internally but is used for testing.
+  struct StatusField
+  {
+    uint8_t data[4];
+    bool received;
+
+    float interpretFixed8x8()
+    {
+      return static_cast<int8_t>(data[1]) + static_cast<float>(data[0]) / float(1<<8);
+    }
+
+    double interpretFixed16x16()
+    {
+      return ((data[0] | static_cast<int32_t>(data[1]) << 8 |
+        static_cast<int32_t>(data[2]) << 16 | static_cast<int32_t>(data[3]) << 24)) / double(1<<16);
+    }
+  };
+
+
 private:
   Gateway& gateway_;
   uint8_t device_number_;
@@ -142,30 +341,21 @@ private:
   uint8_t state_;
 
   uint8_t control_mode_;
-  float gain_p_;
-  float gain_i_;
-  float gain_d_;
+  double gain_p_;
+  double gain_i_;
+  double gain_d_;
   uint16_t encoder_cpr_;
   float gear_ratio_;
 
-  struct StatusField
-  {
-    uint8_t data[4];
-    bool received;
+  void sendUint8(uint32_t id, uint8_t value);
+  void sendUint16(uint32_t id, uint16_t value);
+  void sendFixed8x8(uint32_t id, float value);
+  void sendFixed16x16(uint32_t id, double value);
 
-    float interpretFixed8x8()
-    {
-      return static_cast<int8_t>(data[1]) + static_cast<float>(data[0]) / 256.0f;
-    }
-
-    double interpretFixed16x16()
-    {
-      return ((data[0] | static_cast<int32_t>(data[1]) << 8 | static_cast<int32_t>(data[2]) << 16 | static_cast<int32_t>(data[3]) << 24)) / double(1<<16);
-    }
-  };
   StatusField status_fields_[11];
 
   StatusField* statusFieldForMessage(const Message& msg);
+
 };
 
 }

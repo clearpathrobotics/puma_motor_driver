@@ -45,12 +45,7 @@ namespace puma_motor_driver
 class SocketCANGateway : public Gateway
 {
 public:
-  SocketCANGateway(std::string canbus_dev):
-    canbus_dev_(canbus_dev),
-    is_connected_(false),
-    write_frames_index_(0)
-  {
-  }
+  SocketCANGateway(std::string canbus_dev);
 
   virtual bool connect();
   virtual bool isConnected();
