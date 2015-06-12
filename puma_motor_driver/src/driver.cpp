@@ -200,7 +200,7 @@ void Driver::verifyParams()
       }
       break;
     case 7:
-      if (fabs(getP() - gain_p_) < double(1<<16))
+      if (fabs(getP() - gain_p_) < (1/double(1>>16)))
       {
         state_++;
         ROS_DEBUG("Dev: %i P gain constant was set to %f and %f was requested.", device_number_, getP(), gain_p_);
@@ -222,7 +222,7 @@ void Driver::verifyParams()
       }
       break;
     case 8:
-      if (fabs(getI() - gain_i_) < double(1<<16))
+      if (fabs(getI() - gain_i_) < (1/double(1>>16)))
       {
         state_++;
         ROS_DEBUG("Dev: %i I gain constant was set to %f and %f was requested.", device_number_, getI(), gain_i_);
@@ -244,7 +244,7 @@ void Driver::verifyParams()
       }
       break;
     case 9:
-      if (fabs(getD() - gain_d_) < double(1<<16))
+      if (fabs(getD() - gain_d_) < (1/double(1>>16)))
       {
         state_ = 200;
         ROS_DEBUG("Dev: %i D gain constant was set to %f and %f was requested.", device_number_, getD(), gain_d_);
@@ -461,6 +461,11 @@ void Driver::requestFeedbackPosition()
 void Driver::requestFeedbackSpeed()
 {
   gateway_.queue(Message(LM_API_STATUS_SPD | device_number_));
+}
+
+void Driver::requestFeedbackPowerState()
+{
+  gateway_.queue(Message(LM_API_STATUS_POWER | device_number_));
 }
 
 void Driver::requestFeedbackSetpoint()

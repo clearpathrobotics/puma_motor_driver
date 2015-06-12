@@ -77,6 +77,10 @@ public:
    */
   void requestFeedbackSpeed();
   /**
+   * Sends a message to the motor controller requesting the state of the power flag.
+   */
+  void requestFeedbackPowerState();
+  /**
    * Sends a message to the motor controller requesting the instantaneous set point of the
    * current control mode to populate the cache of feedback data.
    */
