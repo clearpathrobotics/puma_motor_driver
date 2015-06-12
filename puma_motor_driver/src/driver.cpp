@@ -100,6 +100,22 @@ void Driver::sendFixed16x16(uint32_t id, double value)
   gateway_.queue(msg);
 }
 
+bool Driver::verifyRawData(uint8_t* received, double expected)
+{
+  uint8_t data[4];
+  int32_t output_value = (int32_t)(double(1<<16) * expected);
+  memcpy(data, &output_value, 4);
+  for (uint8_t i = 0; i < 4; i++)
+  {
+    if (*received != data[i])
+    {
+      return false;
+    }
+    received++;
+  }
+  return true;
+}
+
 void Driver::setEncoderCPR(uint16_t encoder_cpr)
 {
   encoder_cpr_ = encoder_cpr;
@@ -200,7 +216,7 @@ void Driver::verifyParams()
       }
       break;
     case 7:
-      if (fabs(getP() - gain_p_) < (1/double(1>>16)))
+      if (verifyRawData(getRawP(), gain_p_))
       {
         state_++;
         ROS_DEBUG("Dev: %i P gain constant was set to %f and %f was requested.", device_number_, getP(), gain_p_);
@@ -222,7 +238,7 @@ void Driver::verifyParams()
       }
       break;
     case 8:
-      if (fabs(getI() - gain_i_) < (1/double(1>>16)))
+      if (verifyRawData(getRawI(), gain_i_))
       {
         state_++;
         ROS_DEBUG("Dev: %i I gain constant was set to %f and %f was requested.", device_number_, getI(), gain_i_);
@@ -244,7 +260,7 @@ void Driver::verifyParams()
       }
       break;
     case 9:
-      if (fabs(getD() - gain_d_) < (1/double(1>>16)))
+      if (verifyRawData(getRawD(), gain_d_))
       {
         state_ = 200;
         ROS_DEBUG("Dev: %i D gain constant was set to %f and %f was requested.", device_number_, getD(), gain_d_);
@@ -614,22 +630,111 @@ uint16_t Driver::encoderCounts()
 
 double Driver::getP()
 {
-  StatusField* field = statusFieldForMessage(Message(LM_API_SPD_PC));
+  StatusField* field;
+  switch(control_mode_)
+  {
+    case puma_motor_msgs::Status::MODE_CURRENT:
+      field = statusFieldForMessage(Message(LM_API_ICTRL_PC));
+      break;
+    case puma_motor_msgs::Status::MODE_POSITION:
+      field = statusFieldForMessage(Message(LM_API_POS_PC));
+      break;
+    case puma_motor_msgs::Status::MODE_SPEED:
+      field = statusFieldForMessage(Message(LM_API_SPD_PC));
+      break;
+  };
   return field->interpretFixed16x16();
 }
 
 double Driver::getI()
 {
-  StatusField* field = statusFieldForMessage(Message(LM_API_SPD_IC));
+  StatusField* field;
+  switch(control_mode_)
+  {
+    case puma_motor_msgs::Status::MODE_CURRENT:
+      field = statusFieldForMessage(Message(LM_API_ICTRL_IC));
+      break;
+    case puma_motor_msgs::Status::MODE_POSITION:
+      field = statusFieldForMessage(Message(LM_API_POS_IC));
+      break;
+    case puma_motor_msgs::Status::MODE_SPEED:
+      field = statusFieldForMessage(Message(LM_API_SPD_IC));
+      break;
+  };
   return field->interpretFixed16x16();
 }
 
 double Driver::getD()
 {
-  StatusField* field = statusFieldForMessage(Message(LM_API_SPD_DC));
+  StatusField* field;
+  switch(control_mode_)
+  {
+    case puma_motor_msgs::Status::MODE_CURRENT:
+      field = statusFieldForMessage(Message(LM_API_ICTRL_DC));
+      break;
+    case puma_motor_msgs::Status::MODE_POSITION:
+      field = statusFieldForMessage(Message(LM_API_POS_DC));
+      break;
+    case puma_motor_msgs::Status::MODE_SPEED:
+      field = statusFieldForMessage(Message(LM_API_SPD_DC));
+      break;
+  };
   return field->interpretFixed16x16();
 }
 
+uint8_t* Driver::getRawP()
+{
+  StatusField* field;
+  switch(control_mode_)
+  {
+    case puma_motor_msgs::Status::MODE_CURRENT:
+      field = statusFieldForMessage(Message(LM_API_ICTRL_PC));
+      break;
+    case puma_motor_msgs::Status::MODE_POSITION:
+      field = statusFieldForMessage(Message(LM_API_POS_PC));
+      break;
+    case puma_motor_msgs::Status::MODE_SPEED:
+      field = statusFieldForMessage(Message(LM_API_SPD_PC));
+      break;
+  };
+  return field->data;
+}
+
+uint8_t* Driver::getRawI()
+{
+  StatusField* field;
+  switch(control_mode_)
+  {
+    case puma_motor_msgs::Status::MODE_CURRENT:
+      field = statusFieldForMessage(Message(LM_API_ICTRL_IC));
+      break;
+    case puma_motor_msgs::Status::MODE_POSITION:
+      field = statusFieldForMessage(Message(LM_API_POS_IC));
+      break;
+    case puma_motor_msgs::Status::MODE_SPEED:
+      field = statusFieldForMessage(Message(LM_API_SPD_IC));
+      break;
+  };
+  return field->data;
+}
+
+uint8_t* Driver::getRawD()
+{
+  StatusField* field;
+  switch(control_mode_)
+  {
+    case puma_motor_msgs::Status::MODE_CURRENT:
+      field = statusFieldForMessage(Message(LM_API_ICTRL_DC));
+      break;
+    case puma_motor_msgs::Status::MODE_POSITION:
+      field = statusFieldForMessage(Message(LM_API_POS_DC));
+      break;
+    case puma_motor_msgs::Status::MODE_SPEED:
+      field = statusFieldForMessage(Message(LM_API_SPD_DC));
+      break;
+  };
+  return field->data;
+}
 Driver::StatusField* Driver::statusFieldForMessage(const Message& msg)
 {
   // If it's not a STATUS message, there is no status field box to return.
