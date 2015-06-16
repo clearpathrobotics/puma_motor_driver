@@ -77,6 +77,10 @@ public:
    */
   void requestFeedbackSpeed();
   /**
+   * Sends a message to the motor controller requesting the state of the power flag.
+   */
+  void requestFeedbackPowerState();
+  /**
    * Sends a message to the motor controller requesting the instantaneous set point of the
    * current control mode to populate the cache of feedback data.
    */
@@ -272,7 +276,27 @@ public:
    * @return value of the D gain response.
    */
   double getD();
-
+  /**
+   * Process the last received P gain
+   * for the current control mode.
+   *
+   * @return pointer to raw 4 bytes of the P gain response.
+   */
+  uint8_t* getRawP();
+  /**
+   * Process the last received I gain
+   * for the current control mode.
+   *
+   * @return pointer to raw 4 bytes of the I gain response.
+   */
+  uint8_t* getRawI();
+  /**
+   * Process the last received I gain
+   * for the current control mode.
+   *
+   * @return pointer to raw 4 bytes of the I gain response.
+   */
+  uint8_t* getRawD();
   /**
    * Process the last received set-point response
    * in voltage open-loop control.
@@ -347,10 +371,21 @@ private:
   uint16_t encoder_cpr_;
   float gear_ratio_;
 
+  /**
+   * Helpers to generate data for CAN messages.
+   */
   void sendUint8(uint32_t id, uint8_t value);
   void sendUint16(uint32_t id, uint16_t value);
   void sendFixed8x8(uint32_t id, float value);
   void sendFixed16x16(uint32_t id, double value);
+
+  /**
+   * Comparing the raw bytes of the fixed-point numbers
+    * to avoid comparing the floating point values.
+   *
+   * @return boolean if received is equal to expected.
+   */
+  bool verifyRawData(uint8_t* received, double expected);
 
   StatusField status_fields_[11];
 
