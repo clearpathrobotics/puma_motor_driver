@@ -3,38 +3,6 @@
 #include "puma_motor_driver/driver.h"
 #include "puma_motor_driver/message.h"
 
-
-class TestFixedPoint8x8 : public ::testing::Test
-{
-public:
-  static const int16_t input[];
-  static const float output[];
-  static const int num_cases;
-};
-
-const float TestFixedPoint8x8::output[] = {
-  0.0,
-  1.0,
-  -1.0,
-  -0.00001,
-  127.001,
-  -127.002,
-  123.42678
-};
-
-const int16_t TestFixedPoint8x8::input[] = {
-  int16_t(0.0 * float(1<<8)),
-  int16_t(1.0 * float(1<<8)),
-  int16_t(-1.0 * float(1<<8)),
-  int16_t(-0.00001 * float(1<<8)),
-  int16_t(127.001 * float(1<<8)),
-  int16_t(-127.002 * float(1<<8)),
-  int16_t(123.42678 * float(1<<8))
-};
-
-const int TestFixedPoint8x8::num_cases = sizeof(TestFixedPoint8x8::output) / sizeof(float);
-const static float epsilon = 1.0 / float(1<<8);
-
 TEST(TestFixedPoint16x16, test16x16interpret)
 {
   double cases[7] = {
