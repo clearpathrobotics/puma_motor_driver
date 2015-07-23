@@ -88,20 +88,24 @@ public:
   {
     if (active_)
     {
-      // TODO: Match joint names rather than assuming indexes align.
-      for (int joint = 0; joint < 2; joint++)
+      BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
       {
-        if (desired_mode_ == puma_motor_msgs::Status::MODE_VOLTAGE)
+        for (int i = 0; i < cmd_msg->name.size(); i++)
         {
-          drivers_[joint].commandDutyCycle(cmd_msg->velocity[joint]);
-        }
-        else if (desired_mode_ == puma_motor_msgs::Status::MODE_SPEED)
-        {
-          drivers_[joint].commandSpeed(cmd_msg->velocity[joint] * 6.28);
+          if (driver.deviceName() == cmd_msg->name[i])
+          {
+            if (desired_mode_ == puma_motor_msgs::Status::MODE_VOLTAGE)
+            {
+              driver.commandDutyCycle(cmd_msg->velocity[i]);
+            }
+            else if (desired_mode_ == puma_motor_msgs::Status::MODE_SPEED)
+            {
+              driver.commandSpeed(cmd_msg->velocity[i] * 6.28);
+            }
+          }
         }
       }
     }
-
   }
 
 
