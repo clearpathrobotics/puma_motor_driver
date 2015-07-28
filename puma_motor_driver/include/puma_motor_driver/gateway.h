@@ -58,6 +58,6 @@ public:
   virtual bool recv(Message* msg)=0;
 };
 
-}  // puma_motor_driver
+}  // namespace puma_motor_driver
 
 #endif  // PUMA_MOTOR_DRIVER_GATEWAY_H

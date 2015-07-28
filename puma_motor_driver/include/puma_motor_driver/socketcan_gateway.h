@@ -22,6 +22,10 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCL
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifndef PUMA_MOTOR_DRIVER_SOCKETCAN_GATEWAY_H
+#define PUMA_MOTOR_DRIVER_SOCKETCAN_GATEWAY_H
+
+
 #include <string>
 #include <stdio.h>
 #include <unistd.h>
@@ -45,7 +49,7 @@ namespace puma_motor_driver
 class SocketCANGateway : public Gateway
 {
 public:
-  SocketCANGateway(std::string canbus_dev);
+  explicit SocketCANGateway(std::string canbus_dev);
 
   virtual bool connect();
   virtual bool isConnected();
@@ -56,14 +60,14 @@ public:
   void msgToFrame(Message* msg, can_frame* frame);
 
 private:
-
   int socket_;
   std::string canbus_dev_;  // CAN interface ID
   bool is_connected_;
 
   can_frame write_frames_[1024];
   int write_frames_index_;
-
 };
 
-}  // puma_motor_driver
+}  // namespace puma_motor_driver
+
+#endif  // PUMA_MOTOR_DRIVER_SOCKETCAN_GATEWAY_H

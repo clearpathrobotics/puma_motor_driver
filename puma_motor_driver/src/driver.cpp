@@ -30,7 +30,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 #include "puma_motor_msgs/MultiFeedback.h"
 #include "puma_motor_msgs/Feedback.h"
 
-#include <cstring>
+#include <string>
 #include <ros/ros.h>
 
 namespace puma_motor_driver
@@ -45,7 +45,6 @@ Driver::Driver(Gateway& gateway, uint8_t device_number, std::string device_name)
 
 void Driver::processMessage(const Message& received_msg)
 {
-
   // If it's not our message, jump out.
   if (received_msg.getDeviceNumber() != device_number_) return;
 
@@ -85,7 +84,7 @@ void Driver::sendFixed8x8(uint32_t id, float value)
   Message msg;
   msg.id = id;
   msg.len = 2;
-  int16_t output_value = (int16_t)(float(1<<8) * value);
+  int16_t output_value = static_cast<int16_t>(static_cast<float>(1<<8) * value);
   memcpy(msg.data, &output_value, msg.len);
   gateway_.queue(msg);
 }
@@ -95,7 +94,7 @@ void Driver::sendFixed16x16(uint32_t id, double value)
   Message msg;
   msg.id = id;
   msg.len = 4;
-  int32_t output_value = (int32_t)(double(1<<16) * value);
+  int32_t output_value = static_cast<int32_t>(static_cast<double>((1<<16) * value));
   memcpy(msg.data, &output_value, msg.len);
   gateway_.queue(msg);
 }
@@ -103,7 +102,7 @@ void Driver::sendFixed16x16(uint32_t id, double value)
 bool Driver::verifyRawData(uint8_t* received, double expected)
 {
   uint8_t data[4];
-  int32_t output_value = (int32_t)(double(1<<16) * expected);
+  int32_t output_value = static_cast<int32_t>(static_cast<double>((1<<16) * expected));
   memcpy(data, &output_value, 4);
   for (uint8_t i = 0; i < 4; i++)
   {
@@ -134,12 +133,12 @@ void Driver::commandDutyCycle(float cmd)
 void Driver::commandSpeed(double cmd)
 {
   // Converting from rad/s to RPM through the gearbox.
-  sendFixed16x16((LM_API_SPD_SET | device_number_), (cmd * (( 60 * gear_ratio_) / ( 2 * M_PI))));
+  sendFixed16x16((LM_API_SPD_SET | device_number_), (cmd * ((60 * gear_ratio_) / (2 * M_PI))));
 }
 
 void Driver::verifyParams()
 {
-  switch(state_)
+  switch (state_)
   {
     case 0:
       ROS_DEBUG("Dev: %i starting to verify parameters.", device_number_);
@@ -223,7 +222,7 @@ void Driver::verifyParams()
       }
       else
       {
-        switch(control_mode_)
+        switch (control_mode_)
         {
           case puma_motor_msgs::Status::MODE_CURRENT:
             gateway_.queue(Message(LM_API_ICTRL_PC | device_number_));
@@ -245,7 +244,7 @@ void Driver::verifyParams()
       }
       else
       {
-        switch(control_mode_)
+        switch (control_mode_)
         {
           case puma_motor_msgs::Status::MODE_CURRENT:
             gateway_.queue(Message(LM_API_ICTRL_IC | device_number_));
@@ -267,7 +266,7 @@ void Driver::verifyParams()
       }
       else
       {
-        switch(control_mode_)
+        switch (control_mode_)
         {
           case puma_motor_msgs::Status::MODE_CURRENT:
             gateway_.queue(Message(LM_API_ICTRL_DC | device_number_));
@@ -292,7 +291,7 @@ void Driver::verifyParams()
 
 void Driver::configureParams()
 {
-  switch(state_)
+  switch (state_)
   {
     case 1:
       sendUint8((LM_API_STATUS_POWER | device_number_), 1);
@@ -311,7 +310,7 @@ void Driver::configureParams()
       gateway_.queue(Message(LM_API_SPD_EN | device_number_));
       break;
     case 6:
-      switch(control_mode_)
+      switch (control_mode_)
       {
         case puma_motor_msgs::Status::MODE_VOLTAGE:
           gateway_.queue(Message(LM_API_VOLT_EN | device_number_));
@@ -329,7 +328,7 @@ void Driver::configureParams()
       break;
     case 7:
       // Set P
-      switch(control_mode_)
+      switch (control_mode_)
       {
         case puma_motor_msgs::Status::MODE_CURRENT:
           sendFixed16x16((LM_API_ICTRL_PC  | device_number_), gain_p_);
@@ -344,7 +343,7 @@ void Driver::configureParams()
       break;
     case 8:
       // Set I
-      switch(control_mode_)
+      switch (control_mode_)
       {
         case puma_motor_msgs::Status::MODE_CURRENT:
           sendFixed16x16((LM_API_ICTRL_IC  | device_number_), gain_i_);
@@ -359,7 +358,7 @@ void Driver::configureParams()
       break;
     case 9:
       // Set D
-      switch(control_mode_)
+      switch (control_mode_)
       {
         case puma_motor_msgs::Status::MODE_CURRENT:
           sendFixed16x16((LM_API_ICTRL_DC  | device_number_), gain_d_);
@@ -373,7 +372,6 @@ void Driver::configureParams()
       }
       break;
   }
-
 }
 
 bool Driver::isConfigured()
@@ -395,7 +393,7 @@ void Driver::setGains(double p, double i, double d)
 
 void Driver::setMode(uint8_t mode)
 {
-  if(mode == puma_motor_msgs::Status::MODE_VOLTAGE)
+  if (mode == puma_motor_msgs::Status::MODE_VOLTAGE)
   {
     control_mode_ = mode;
     ROS_INFO("Dev: %i mode set to voltage control.", device_number_);
@@ -412,7 +410,7 @@ void Driver::setMode(uint8_t mode)
 
 void Driver::setMode(uint8_t mode, double p, double i, double d)
 {
-  if(mode == puma_motor_msgs::Status::MODE_VOLTAGE)
+  if (mode == puma_motor_msgs::Status::MODE_VOLTAGE)
   {
     control_mode_ = mode;
     ROS_WARN("Dev: %i mode set to voltage control but PID gains are not needed.", device_number_);
@@ -428,7 +426,7 @@ void Driver::setMode(uint8_t mode, double p, double i, double d)
     {
       resetConfiguration();
     }
-    setGains(p,i,d);
+    setGains(p, i, d);
     ROS_INFO("Dev: %i mode set to a closed-loop control with PID gains of P:%f, I:%f and D:%f.",
       device_number_, gain_p_, gain_i_, gain_d_);
   }
@@ -481,7 +479,7 @@ void Driver::requestFeedbackPowerState()
 
 void Driver::requestFeedbackSetpoint()
 {
-  switch(control_mode_)
+  switch (control_mode_)
   {
     case puma_motor_msgs::Status::MODE_CURRENT:
       gateway_.queue(Message(LM_API_ICTRL_SET | device_number_));
@@ -638,7 +636,7 @@ uint16_t Driver::encoderCounts()
 double Driver::getP()
 {
   StatusField* field;
-  switch(control_mode_)
+  switch (control_mode_)
   {
     case puma_motor_msgs::Status::MODE_CURRENT:
       field = statusFieldForMessage(Message(LM_API_ICTRL_PC));
@@ -656,7 +654,7 @@ double Driver::getP()
 double Driver::getI()
 {
   StatusField* field;
-  switch(control_mode_)
+  switch (control_mode_)
   {
     case puma_motor_msgs::Status::MODE_CURRENT:
       field = statusFieldForMessage(Message(LM_API_ICTRL_IC));
@@ -674,7 +672,7 @@ double Driver::getI()
 double Driver::getD()
 {
   StatusField* field;
-  switch(control_mode_)
+  switch (control_mode_)
   {
     case puma_motor_msgs::Status::MODE_CURRENT:
       field = statusFieldForMessage(Message(LM_API_ICTRL_DC));
@@ -692,7 +690,7 @@ double Driver::getD()
 uint8_t* Driver::getRawP()
 {
   StatusField* field;
-  switch(control_mode_)
+  switch (control_mode_)
   {
     case puma_motor_msgs::Status::MODE_CURRENT:
       field = statusFieldForMessage(Message(LM_API_ICTRL_PC));
@@ -710,7 +708,7 @@ uint8_t* Driver::getRawP()
 uint8_t* Driver::getRawI()
 {
   StatusField* field;
-  switch(control_mode_)
+  switch (control_mode_)
   {
     case puma_motor_msgs::Status::MODE_CURRENT:
       field = statusFieldForMessage(Message(LM_API_ICTRL_IC));
@@ -728,7 +726,7 @@ uint8_t* Driver::getRawI()
 uint8_t* Driver::getRawD()
 {
   StatusField* field;
-  switch(control_mode_)
+  switch (control_mode_)
   {
     case puma_motor_msgs::Status::MODE_CURRENT:
       field = statusFieldForMessage(Message(LM_API_ICTRL_DC));
@@ -754,4 +752,4 @@ Driver::StatusField* Driver::statusFieldForMessage(const Message& msg)
   return &status_fields_[status_field_index];
 }
 
-}
+}  // namespace puma_motor_driver

@@ -22,6 +22,9 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCL
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <string>
+#include <vector>
+
 #include "boost/foreach.hpp"
 #include "boost/scoped_ptr.hpp"
 #include "boost/shared_ptr.hpp"
@@ -42,11 +45,9 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 
 class MultiControllerNode
 {
-
 typedef void (puma_motor_driver::Driver::*requestFeedback)();
 
 public:
-
   MultiControllerNode(ros::NodeHandle& nh, ros::NodeHandle& nh_private,
                       puma_motor_driver::Gateway& gateway) :
     nh_(nh),
@@ -258,5 +259,4 @@ int main(int argc, char *argv[])
   puma_motor_driver::PumaMotorDriverDiagnosticUpdater puma_motor_driver_diagnostic_updater;
   MultiControllerNode n(nh, nh_private, *gateway);
   n.run();
-
 }
