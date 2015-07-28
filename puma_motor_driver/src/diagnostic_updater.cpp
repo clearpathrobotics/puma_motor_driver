@@ -1,3 +1,26 @@
+/**
+Software License Agreement (BSD)
+
+\authors   Tony Baltovski <tbaltovski@clearpathrobotics.com>
+\copyright Copyright (c) 2015, Clearpath Robotics, Inc., All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that
+the following conditions are met:
+ * Redistributions of source code must retain the above copyright notice, this list of conditions and the
+   following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the
+   following disclaimer in the documentation and/or other materials provided with the distribution.
+ * Neither the name of Clearpath Robotics nor the names of its contributors may be used to endorse or promote
+   products derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WAR-
+RANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, IN-
+DIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
 #include <string>
 
 #include "boost/foreach.hpp"
@@ -19,7 +42,7 @@ PumaMotorDriverDiagnosticUpdater::PumaMotorDriverDiagnosticUpdater()
 
 const char* PumaMotorDriverDiagnosticUpdater::getModeString(uint8_t mode)
 {
-  switch(mode)
+  switch (mode)
   {
     case puma_motor_msgs::Status::MODE_VOLTAGE:
       return "Voltage Control";
@@ -38,7 +61,7 @@ const char* PumaMotorDriverDiagnosticUpdater::getModeString(uint8_t mode)
 
 const char* PumaMotorDriverDiagnosticUpdater::getFaulString(uint8_t fault)
 {
-  switch(fault)
+  switch (fault)
   {
     case puma_motor_msgs::Status::FAULT_CURRENT:
       return "current fault";
@@ -78,12 +101,12 @@ void PumaMotorDriverDiagnosticUpdater::driverDiagnostics(diagnostic_updater::Dia
 void PumaMotorDriverDiagnosticUpdater::statusCallback(const puma_motor_msgs::MultiStatus::ConstPtr& status_msg)
 {
   last_status_ = status_msg;
-  if(!initialized_)
+  if (!initialized_)
   {
     for (int i = 0; i < status_msg->drivers.size(); i++)
     {
       char name[100];
-      sprintf(name, "Puma motor driver on: %s with CAN ID (%d)",
+      snprintf(name, sizeof(name), "Puma motor driver on: %s with CAN ID (%d)",
         last_status_->drivers[i].device_name.c_str(), last_status_->drivers[i].device_number);
       add(name, boost::bind(&PumaMotorDriverDiagnosticUpdater::driverDiagnostics, this, _1, i));
     }
@@ -93,7 +116,6 @@ void PumaMotorDriverDiagnosticUpdater::statusCallback(const puma_motor_msgs::Mul
   {
     update();
   }
-
 }
 
-}  // puma_motor_driver namespace
+}  // namespace puma_motor_driver

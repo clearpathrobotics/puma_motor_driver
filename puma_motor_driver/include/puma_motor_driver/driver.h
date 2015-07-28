@@ -102,9 +102,9 @@ public:
    * @param[in] cmd Value to command in rad/s.
    */
   void commandSpeed(double cmd);
-  //void currentSet(float cmd);
-  //void positionSet(float cmd);
-  //void neutralSet();
+  // void currentSet(float cmd);
+  // void positionSet(float cmd);
+  // void neutralSet();
 
   /**
    * Set the encoders resolution in counts per rev.
@@ -351,13 +351,13 @@ public:
 
     float interpretFixed8x8()
     {
-      return static_cast<int8_t>(data[1]) + static_cast<float>(data[0]) / float(1<<8);
+      return static_cast<int8_t>(data[1]) + static_cast<float>(data[0]) / static_cast<float>(1<<8);
     }
 
     double interpretFixed16x16()
     {
       return ((data[0] | static_cast<int32_t>(data[1]) << 8 |
-        static_cast<int32_t>(data[2]) << 16 | static_cast<int32_t>(data[3]) << 24)) / double(1<<16);
+        static_cast<int32_t>(data[2]) << 16 | static_cast<int32_t>(data[3]) << 24)) / static_cast<double>(1<<16);
     }
   };
 
@@ -396,9 +396,8 @@ private:
   StatusField status_fields_[12];
 
   StatusField* statusFieldForMessage(const Message& msg);
-
 };
 
-}
+}  // namespace puma_motor_driver
 
 #endif  // PUMA_MOTOR_DRIVER_DRIVER_H
