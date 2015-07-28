@@ -351,13 +351,12 @@ public:
 
     float interpretFixed8x8()
     {
-      return static_cast<int8_t>(data[1]) + static_cast<float>(data[0]) / static_cast<float>(1<<8);
+      return *(reinterpret_cast<int16_t*>(data)) / static_cast<float>(1<<8);
     }
 
     double interpretFixed16x16()
     {
-      return ((data[0] | static_cast<int32_t>(data[1]) << 8 |
-        static_cast<int32_t>(data[2]) << 16 | static_cast<int32_t>(data[3]) << 24)) / static_cast<double>(1<<16);
+      return *(reinterpret_cast<int32_t*>(data)) / static_cast<double>(1<<16);
     }
   };
 
