@@ -24,16 +24,20 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 
 #include "boost/foreach.hpp"
 #include "boost/scoped_ptr.hpp"
+#include "boost/shared_ptr.hpp"
+#include "serial/serial.h"
+
+#include "ros/ros.h"
+#include "sensor_msgs/JointState.h"
 #include "puma_motor_driver/driver.h"
 #include "puma_motor_driver/serial_gateway.h"
 #include "puma_motor_driver/socketcan_gateway.h"
+#include "puma_motor_driver/multi_driver_node.h"
+#include "puma_motor_driver/diagnostic_updater.h"
 #include "puma_motor_msgs/MultiStatus.h"
 #include "puma_motor_msgs/Status.h"
 #include "puma_motor_msgs/MultiFeedback.h"
 #include "puma_motor_msgs/Feedback.h"
-#include "ros/ros.h"
-#include "sensor_msgs/JointState.h"
-#include "serial/serial.h"
 
 
 class MultiControllerNode
@@ -57,30 +61,22 @@ public:
     drivers_.push_back(puma_motor_driver::Driver(gateway_, 2, "rl"));
     drivers_.push_back(puma_motor_driver::Driver(gateway_, 4, "rr"));
 
-    feedbacks_.push_back(&puma_motor_driver::Driver::requestFeedbackDutyCycle);
-    feedbacks_.push_back(&puma_motor_driver::Driver::requestFeedbackCurrent);
-    feedbacks_.push_back(&puma_motor_driver::Driver::requestFeedbackPosition);
-    feedbacks_.push_back(&puma_motor_driver::Driver::requestFeedbackSpeed);
-    feedbacks_.push_back(&puma_motor_driver::Driver::requestFeedbackSetpoint);
-
     cmd_sub_ = nh_.subscribe("cmd", 1, &MultiControllerNode::cmdCallback, this);
-    status_pub_ = nh_.advertise<puma_motor_msgs::MultiStatus>("status", 5);
-    feedback_pub_ = nh_.advertise<puma_motor_msgs::MultiFeedback>("feedback", 5);
 
     nh_private_.param<double>("gear_ratio", gear_ratio_, 79.0);
     nh_private_.param<int>("encoder_cpr", encoder_cpr_, 1024);
-    nh_private_.param<int>("frequency", freq_, 20);
+    nh_private_.param<int>("frequency", freq_, 25);
 
-    status_msg_.drivers.resize(4);
-    feedback_msg_.drivers_feedback.resize(4);
 
     BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
     {
       driver.clearStatusCache();
       driver.setEncoderCPR(encoder_cpr_);
       driver.setGearRatio(gear_ratio_);
-      driver.setMode(desired_mode_, -0.1, -0.01, 0.0);
+      driver.setMode(desired_mode_, 0.1, 0.01, 0.0);
     }
+
+    multi_driver_node_.reset(new puma_motor_driver::MultiDriverNode(nh_, drivers_));
   }
 
 
@@ -143,7 +139,7 @@ public:
         // Checks to see if power flag has been reset for each driver
         BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
         {
-          if ( driver.lastPower() != 0)
+          if (driver.lastPower() != 0)
           {
             active_ = false;
             ROS_WARN("There was a power rest on Dev: %d, will reconfigure all drivers.", driver.deviceNumber());
@@ -154,32 +150,11 @@ public:
           }
         }
         // Queue data requests for the drivers in order to assemble an amalgamated status message.
-        BOOST_FOREACH(requestFeedback feedbackFc, feedbacks_)
+        BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
         {
-          BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
-          {
-            (driver.*feedbackFc)();
-          }
-          gateway_.sendAllQueued();
-          ros::Duration(0.001).sleep();
+          driver.requestStatusMessages();
+          driver.requestFeedbackSetpoint();
         }
-        // Temp hack -> TODO: fix this.
-        switch(status_count_)
-        {
-          case 1:
-            drivers_[0].requestStatusMessages();
-            break;
-          case 6:
-            drivers_[1].requestStatusMessages();
-            break;
-          case 11:
-            drivers_[2].requestStatusMessages();
-            break;
-          case 16:
-            drivers_[3].requestStatusMessages();
-            break;
-        }
-
       }
       else
       {
@@ -189,11 +164,11 @@ public:
           driver.configureParams();
         }
       }
-
+      gateway_.sendAllQueued();
       // Process ROS callbacks, which will queue command messages to the drivers.
       ros::spinOnce();
       gateway_.sendAllQueued();
-      ros::Duration(0.005).sleep();
+      //ros::Duration(0.005).sleep();
 
 
       // Process all received messages through the connected driver instances.
@@ -226,49 +201,6 @@ public:
         ROS_INFO("All contollers active.");
       }
 
-      if (active_)
-      {
-        // Prepare output feedback message to ROS.
-        uint8_t feedback_index = 0;
-        BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
-        {
-          puma_motor_msgs::Feedback* f = &feedback_msg_.drivers_feedback[feedback_index];
-          f->device_number = driver.deviceNumber();
-          f->device_name = driver.deviceName();
-          f->duty_cycle = driver.lastDutyCycle();
-          f->current = driver.lastCurrent();
-          f->travel = driver.lastPosition();
-          f->speed = driver.lastSpeed();
-          f->setpoint = driver.lastSetpoint();
-
-          feedback_index++;
-        }
-        feedback_msg_.header.stamp = ros::Time::now();
-        feedback_pub_.publish(feedback_msg_);
-
-        if (status_count_ >= freq_)
-        {
-          // Prepare output status message to ROS.
-          uint8_t status_index = 0;
-          BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
-          {
-            puma_motor_msgs::Status* s = &status_msg_.drivers[status_index];
-            s->device_number = driver.deviceNumber();
-            s->device_name = driver.deviceName();
-            s->bus_voltage = driver.lastBusVoltage();
-            s->fault = driver.lastFault();
-            s->output_voltage = driver.lastOutVoltage();
-            s->mode = driver.lastMode();
-
-            status_index++;
-            status_count_ = 0;
-          }
-          status_msg_.header.stamp = ros::Time::now();
-          status_pub_.publish(status_msg_);
-        }
-
-      }
-
       // Send the broadcast heartbeat message.
       // gateway_.heartbeat();
       status_count_++;
@@ -292,12 +224,7 @@ private:
 
   ros::Subscriber cmd_sub_;
 
-  // Maintain a persistent MultiStatus to avoid doing vector resizes on
-  // every trip through the main loop.
-  puma_motor_msgs::MultiStatus status_msg_;
-  puma_motor_msgs::MultiFeedback feedback_msg_;
-  ros::Publisher status_pub_;
-  ros::Publisher feedback_pub_;
+  boost::shared_ptr<puma_motor_driver::MultiDriverNode> multi_driver_node_;
 };
 
 
@@ -314,13 +241,13 @@ int main(int argc, char *argv[])
 
   if (nh_private.getParam("canbus_dev", canbus_dev))
   {
-    gateway.reset(new puma_motor_driver::SocketCANGateway (canbus_dev));
+    gateway.reset(new puma_motor_driver::SocketCANGateway(canbus_dev));
   }
   else if (nh_private.getParam("serial_port", serial_port))
   {
     serial::Serial serial;
     serial.setPort(serial_port);
-    gateway.reset(new puma_motor_driver::SerialGateway (serial));
+    gateway.reset(new puma_motor_driver::SerialGateway(serial));
   }
   else
   {
@@ -328,6 +255,7 @@ int main(int argc, char *argv[])
     return 1;
   }
 
+  puma_motor_driver::PumaMotorDriverDiagnosticUpdater puma_motor_driver_diagnostic_updater;
   MultiControllerNode n(nh, nh_private, *gateway);
   n.run();
 

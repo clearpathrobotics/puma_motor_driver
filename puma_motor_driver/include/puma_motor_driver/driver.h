@@ -26,7 +26,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 
 #include <stdint.h>
 #include <string>
-#include <ros/ros.h>
+
 #include "puma_motor_driver/can_proto.h"
 #include "puma_motor_msgs/Status.h"
 
@@ -191,6 +191,12 @@ public:
    * @return value of the instantaneous temperature.
    */
   float lastTemperature();
+  /**
+   * Process the last received analog_input response.
+   *
+   * @return value of the instantaneous analog_input.
+   */
+  float lastAnalogInput();
   /**
    * Process the last received travel response.
    *
@@ -387,7 +393,7 @@ private:
    */
   bool verifyRawData(uint8_t* received, double expected);
 
-  StatusField status_fields_[11];
+  StatusField status_fields_[12];
 
   StatusField* statusFieldForMessage(const Message& msg);
 

@@ -104,18 +104,31 @@ bool SocketCANGateway::recv(Message* msg)
   can_frame read_frame;
 
   int bytes = read(socket_, &read_frame, sizeof(struct can_frame));
-  ROS_DEBUG("Recieved ID 0x%08x, data (%d)", (read_frame.can_id& CAN_EFF_MASK), read_frame.can_dlc);
-  if (bytes <= 0)
+  if (bytes == sizeof(struct can_frame))
   {
-    ROS_DEBUG("No more frames");
-    return false;
-  }
-  else
-  {
+    ROS_DEBUG("Recieved ID 0x%08x, data (%d)", (read_frame.can_id& CAN_EFF_MASK), read_frame.can_dlc);
     msgToFrame(msg, &read_frame);
     return true;
   }
-
+  else
+  {
+    if (bytes < 0)
+    {
+      if (errno == EAGAIN)
+      {
+        ROS_DEBUG("No more frames");
+      }
+      else
+      {
+        ROS_ERROR("Error reading from socketcan: %d", errno);
+      }
+    }
+    else
+    {
+      ROS_ERROR("Socketcan read() returned unexpected size.");
+    }
+    return false;
+  }
 }
 
 void SocketCANGateway::queue(const Message& msg)

@@ -44,6 +44,8 @@ add_library(puma_motor_driver
   src/driver.cpp
   src/serial_gateway.cpp
   src/socketcan_gateway.cpp
+  src/multi_driver_node.cpp
+  src/diagnostic_updater.cpp
 )
 
 target_link_libraries(puma_motor_driver
