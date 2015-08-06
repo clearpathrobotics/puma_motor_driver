@@ -3,7 +3,7 @@
 // can_proto.h - Definitions for the CAN protocol used to communicate with the
 //               BDC motor controller.
 //
-// Copyright (c) 2008-2011 Texas Instruments Incorporated.  All rights reserved.
+// Copyright (c) 2008-2013 Texas Instruments Incorporated.  All rights reserved.
 // Software License Agreement
 //
 // Texas Instruments (TI) is supplying this software for use solely and
@@ -19,7 +19,7 @@
 // CIRCUMSTANCES, BE LIABLE FOR SPECIAL, INCIDENTAL, OR CONSEQUENTIAL
 // DAMAGES, FOR ANY REASON WHATSOEVER.
 //
-// This is part of revision 8049 of the Stellaris Firmware Development Package.
+// This is part of revision 10636 of the RDK-BDC24 Firmware Package.
 //
 //*****************************************************************************
 
@@ -121,6 +121,7 @@
 #define CAN_API_MC_POS          0x00000c00
 #define CAN_API_MC_ICTRL        0x00001000
 #define CAN_API_MC_STATUS       0x00001400
+#define CAN_API_MC_PSTAT        0x00001800
 #define CAN_API_MC_CFG          0x00001c00
 #define CAN_API_MC_ACK          0x00002000
 
@@ -135,6 +136,7 @@
 #define LM_API_VOLT_DIS         (LM_API_VOLT | (1 << CAN_MSGID_API_S))
 #define LM_API_VOLT_SET         (LM_API_VOLT | (2 << CAN_MSGID_API_S))
 #define LM_API_VOLT_SET_RAMP    (LM_API_VOLT | (3 << CAN_MSGID_API_S))
+#define LM_API_VOLT_SET_NO_ACK  (LM_API_VOLT | (8 << CAN_MSGID_API_S))
 
 //*****************************************************************************
 //
@@ -164,6 +166,7 @@
 #define LM_API_SPD_IC           (LM_API_SPD | (4 << CAN_MSGID_API_S))
 #define LM_API_SPD_DC           (LM_API_SPD | (5 << CAN_MSGID_API_S))
 #define LM_API_SPD_REF          (LM_API_SPD | (6 << CAN_MSGID_API_S))
+#define LM_API_SPD_SET_NO_ACK   (LM_API_SPD | (11 << CAN_MSGID_API_S))
 
 //*****************************************************************************
 //
@@ -177,6 +180,7 @@
 #define LM_API_VCOMP_SET        (LM_API_VCOMP | (2 << CAN_MSGID_API_S))
 #define LM_API_VCOMP_IN_RAMP    (LM_API_VCOMP | (3 << CAN_MSGID_API_S))
 #define LM_API_VCOMP_COMP_RAMP  (LM_API_VCOMP | (4 << CAN_MSGID_API_S))
+#define LM_API_VCOMP_SET_NO_ACK (LM_API_VCOMP | (9 << CAN_MSGID_API_S))
 
 //*****************************************************************************
 //
@@ -192,6 +196,7 @@
 #define LM_API_POS_IC           (LM_API_POS | (4 << CAN_MSGID_API_S))
 #define LM_API_POS_DC           (LM_API_POS | (5 << CAN_MSGID_API_S))
 #define LM_API_POS_REF          (LM_API_POS | (6 << CAN_MSGID_API_S))
+#define LM_API_POS_SET_NO_ACK   (LM_API_POS | (11 << CAN_MSGID_API_S))
 
 //*****************************************************************************
 //
@@ -206,6 +211,7 @@
 #define LM_API_ICTRL_PC         (LM_API_ICTRL | (3 << CAN_MSGID_API_S))
 #define LM_API_ICTRL_IC         (LM_API_ICTRL | (4 << CAN_MSGID_API_S))
 #define LM_API_ICTRL_DC         (LM_API_ICTRL | (5 << CAN_MSGID_API_S))
+#define LM_API_ICTRL_SET_NO_ACK (LM_API_ICTRL | (10 << CAN_MSGID_API_S))
 
 //*****************************************************************************
 //
@@ -239,6 +245,11 @@
 #define LM_API_STATUS_POWER     (LM_API_STATUS | (8 << CAN_MSGID_API_S))
 #define LM_API_STATUS_CMODE     (LM_API_STATUS | (9 << CAN_MSGID_API_S))
 #define LM_API_STATUS_VOUT      (LM_API_STATUS | (10 << CAN_MSGID_API_S))
+
+#define CPR_API_STATUS_ANALOG    (LM_API_STATUS | (15 << CAN_MSGID_API_S))
+#define LM_API_STATUS_STKY_FLT  (LM_API_STATUS | (11 << CAN_MSGID_API_S))
+#define LM_API_STATUS_FLT_COUNT (LM_API_STATUS | (12 << CAN_MSGID_API_S))
+
 
 //*****************************************************************************
 //
@@ -274,6 +285,13 @@
 #define LM_API_CFG_LIMIT_REV    (LM_API_CFG | (6 << CAN_MSGID_API_S))
 #define LM_API_CFG_MAX_VOUT     (LM_API_CFG | (7 << CAN_MSGID_API_S))
 #define LM_API_CFG_FAULT_TIME   (LM_API_CFG | (8 << CAN_MSGID_API_S))
+
+#define CPR_API_CFG_SHUTDOWN_TEMP (LM_API_CFG | (11 << CAN_MSGID_API_S))
+#define CPR_API_CFG_MINIMUM_LEVEL (LM_API_CFG | (12 << CAN_MSGID_API_S))
+#define CPR_API_CFG_NOMINAL_LEVEL (LM_API_CFG | (13 << CAN_MSGID_API_S))
+#define CPR_API_CFG_SHUTOFF_LEVEL (LM_API_CFG | (14 << CAN_MSGID_API_S))
+#define CPR_API_CFG_SHUTOFF_TIME  (LM_API_CFG | (15 << CAN_MSGID_API_S))
+
 
 //*****************************************************************************
 //
@@ -325,5 +343,68 @@
 #define LM_FAULT_TEMP           0x02
 #define LM_FAULT_VBUS           0x04
 #define LM_FAULT_GATE_DRIVE     0x08
+#define LM_FAULT_COMM           0x10
+
+//*****************************************************************************
+//
+// The Stellaris Motor Class Periodic Status API definitions.
+//
+//*****************************************************************************
+#define LM_API_PSTAT            (CAN_MSGID_MFR_LM | CAN_MSGID_DTYPE_MOTOR |   \
+                                 CAN_API_MC_PSTAT)
+#define LM_API_PSTAT_PER_EN_S0  (LM_API_PSTAT | (0 << CAN_MSGID_API_S))
+#define LM_API_PSTAT_PER_EN_S1  (LM_API_PSTAT | (1 << CAN_MSGID_API_S))
+#define LM_API_PSTAT_PER_EN_S2  (LM_API_PSTAT | (2 << CAN_MSGID_API_S))
+#define LM_API_PSTAT_PER_EN_S3  (LM_API_PSTAT | (3 << CAN_MSGID_API_S))
+#define LM_API_PSTAT_CFG_S0     (LM_API_PSTAT | (4 << CAN_MSGID_API_S))
+#define LM_API_PSTAT_CFG_S1     (LM_API_PSTAT | (5 << CAN_MSGID_API_S))
+#define LM_API_PSTAT_CFG_S2     (LM_API_PSTAT | (6 << CAN_MSGID_API_S))
+#define LM_API_PSTAT_CFG_S3     (LM_API_PSTAT | (7 << CAN_MSGID_API_S))
+#define LM_API_PSTAT_DATA_S0    (LM_API_PSTAT | (8 << CAN_MSGID_API_S))
+#define LM_API_PSTAT_DATA_S1    (LM_API_PSTAT | (9 << CAN_MSGID_API_S))
+#define LM_API_PSTAT_DATA_S2    (LM_API_PSTAT | (10 << CAN_MSGID_API_S))
+#define LM_API_PSTAT_DATA_S3    (LM_API_PSTAT | (11 << CAN_MSGID_API_S))
+
+//*****************************************************************************
+//
+// The values that can be used to configure the data the Periodic Status
+// Message bytes.  Bytes of a multi-byte data values are encoded as
+// little-endian, therefore B0 is the least significant byte.
+//
+//*****************************************************************************
+#define LM_PSTAT_END            0
+#define LM_PSTAT_VOLTOUT_B0     1
+#define LM_PSTAT_VOLTOUT_B1     2
+#define LM_PSTAT_VOLTBUS_B0     3
+#define LM_PSTAT_VOLTBUS_B1     4
+#define LM_PSTAT_CURRENT_B0     5
+#define LM_PSTAT_CURRENT_B1     6
+#define LM_PSTAT_TEMP_B0        7
+#define LM_PSTAT_TEMP_B1        8
+#define LM_PSTAT_POS_B0         9
+#define LM_PSTAT_POS_B1         10
+#define LM_PSTAT_POS_B2         11
+#define LM_PSTAT_POS_B3         12
+#define LM_PSTAT_SPD_B0         13
+#define LM_PSTAT_SPD_B1         14
+#define LM_PSTAT_SPD_B2         15
+#define LM_PSTAT_SPD_B3         16
+#define LM_PSTAT_LIMIT_NCLR     17
+#define LM_PSTAT_LIMIT_CLR      18
+#define LM_PSTAT_FAULT          19
+#define LM_PSTAT_STKY_FLT_NCLR  20
+#define LM_PSTAT_STKY_FLT_CLR   21
+#define LM_PSTAT_VOUT_B0        22
+#define LM_PSTAT_VOUT_B1        23
+#define LM_PSTAT_FLT_COUNT_CURRENT \
+                                24
+#define LM_PSTAT_FLT_COUNT_TEMP 25
+#define LM_PSTAT_FLT_COUNT_VOLTBUS \
+                                26
+#define LM_PSTAT_FLT_COUNT_GATE 27
+#define LM_PSTAT_FLT_COUNT_COMM 28
+#define LM_PSTAT_CANSTS         29
+#define LM_PSTAT_CANERR_B0      30
+#define LM_PSTAT_CANERR_B1      31
 
 #endif // __CAN_PROTO_H__

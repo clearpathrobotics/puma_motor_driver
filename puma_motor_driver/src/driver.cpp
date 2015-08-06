@@ -443,12 +443,7 @@ void Driver::clearStatusCache()
 
 void Driver::requestStatusMessages()
 {
-  gateway_.queue(Message(LM_API_STATUS_VOLTBUS | device_number_));
-  gateway_.queue(Message(LM_API_STATUS_TEMP    | device_number_));
-  gateway_.queue(Message(LM_API_STATUS_FAULT   | device_number_));
   gateway_.queue(Message(LM_API_STATUS_POWER   | device_number_));
-  gateway_.queue(Message(LM_API_STATUS_VOUT    | device_number_));
-  gateway_.queue(Message(LM_API_STATUS_CMODE   | device_number_));
 }
 
 void Driver::requestFeedbackMessages()
@@ -566,6 +561,18 @@ uint8_t Driver::lastMode()
 float Driver::lastOutVoltage()
 {
   StatusField* field = statusFieldForMessage(Message(LM_API_STATUS_VOUT));
+  return field->interpretFixed8x8();
+}
+
+float Driver::lastTemperature()
+{
+  StatusField* field = statusFieldForMessage(Message(LM_API_STATUS_TEMP));
+  return field->interpretFixed8x8();
+}
+
+float Driver::lastAnalogInput()
+{
+  StatusField* field = statusFieldForMessage(Message(CPR_API_STATUS_ANALOG));
   return field->interpretFixed8x8();
 }
 
