@@ -200,7 +200,6 @@ public:
         active_ = true;
         ROS_INFO("All contollers active.");
       }
-
       // Send the broadcast heartbeat message.
       // gateway_.heartbeat();
       status_count_++;
