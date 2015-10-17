@@ -47,6 +47,8 @@ file(GLOB LINT_SRCS
   include/puma_motor_driver/message.h
   include/puma_motor_driver/serial_gateway.h
   include/puma_motor_driver/socketcan_gateway.h
+  include/puma_motor_driver/multi_driver_node.h
+  include/puma_motor_driver/diagnostic_updater.h
   test/*.cpp)
 roslint_cpp(${LINT_SRCS})
 roslint_add_test()

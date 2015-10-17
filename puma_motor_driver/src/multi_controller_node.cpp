@@ -45,7 +45,6 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 
 class MultiControllerNode
 {
-typedef void (puma_motor_driver::Driver::*requestFeedback)();
 
 public:
   MultiControllerNode(ros::NodeHandle& nh, ros::NodeHandle& nh_private,
@@ -169,7 +168,7 @@ public:
       // Process ROS callbacks, which will queue command messages to the drivers.
       ros::spinOnce();
       gateway_.sendAllQueued();
-      //ros::Duration(0.005).sleep();
+      // ros::Duration(0.005).sleep();
 
 
       // Process all received messages through the connected driver instances.
@@ -201,7 +200,6 @@ public:
         active_ = true;
         ROS_INFO("All contollers active.");
       }
-
       // Send the broadcast heartbeat message.
       // gateway_.heartbeat();
       status_count_++;
@@ -214,7 +212,6 @@ private:
   ros::NodeHandle nh_private_;
   puma_motor_driver::Gateway& gateway_;
   std::vector<puma_motor_driver::Driver> drivers_;
-  std::vector<requestFeedback> feedbacks_;
 
   int freq_;
   int encoder_cpr_;
@@ -224,7 +221,6 @@ private:
   bool active_;
 
   ros::Subscriber cmd_sub_;
-
   boost::shared_ptr<puma_motor_driver::MultiDriverNode> multi_driver_node_;
 };
 
