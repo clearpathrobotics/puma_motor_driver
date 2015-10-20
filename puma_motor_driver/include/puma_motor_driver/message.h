@@ -38,7 +38,7 @@ struct Message
   uint32_t id;
   uint8_t len;
 
-  Message(uint32_t id = 0) : id(id), len(0)
+  explicit Message(uint32_t id = 0) : id(id), len(0)
   {
   }
 
@@ -53,6 +53,6 @@ struct Message
   }
 };
 
-}  // puma_motor_driver
+}  // namespace puma_motor_driver
 
 #endif  // PUMA_MOTOR_DRIVER_MESSAGE_H

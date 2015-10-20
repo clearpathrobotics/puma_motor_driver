@@ -6,33 +6,13 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   serial
   puma_motor_msgs
+  roslint
 )
-
-## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
-
-## Generate actions in the 'action' folder
-# add_action_files(
-#   FILES
-#   Action1.action
-#   Action2.action
-# )
-
-## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   sensor_msgs
-# )
 
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES puma_motor_driver
   CATKIN_DEPENDS roscpp sensor_msgs serial puma_motor_msgs
-#  DEPENDS system_lib
 )
 
 include_directories(
@@ -60,6 +40,18 @@ target_link_libraries(puma_multi_controller_node
   ${catkin_LIBRARIES}
 )
 
+file(GLOB LINT_SRCS
+  src/*.cpp
+  include/puma_motor_driver/driver.h
+  include/puma_motor_driver/gateway.h
+  include/puma_motor_driver/message.h
+  include/puma_motor_driver/serial_gateway.h
+  include/puma_motor_driver/socketcan_gateway.h
+  include/puma_motor_driver/multi_driver_node.h
+  include/puma_motor_driver/diagnostic_updater.h
+  test/*.cpp)
+roslint_cpp(${LINT_SRCS})
+roslint_add_test()
 
 
 # Mark executables and/or libraries for installation
@@ -74,13 +66,11 @@ install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
 )
 
-## Mark other files for installation (e.g. launch and bag files, etc.)
-# install(FILES
-#   # myfile1
-#   # myfile2
-#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-# )
-
 if(CATKIN_ENABLE_TESTING)
+
+  find_package(roslaunch REQUIRED)
+  roslaunch_add_file_check(launch/mecanum.launch)
+  roslaunch_add_file_check(launch/omni.launch)
+
   catkin_add_gtest(fixed_point_test test/fixed_point_test.cpp)
 endif()

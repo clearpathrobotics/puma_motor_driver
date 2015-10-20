@@ -50,8 +50,7 @@ SocketCANGateway::SocketCANGateway(std::string canbus_dev):
 
 bool SocketCANGateway::connect()
 {
-
-  if((socket_ = socket(PF_CAN, SOCK_RAW, CAN_RAW)) < 0)
+  if ((socket_ = socket(PF_CAN, SOCK_RAW, CAN_RAW)) < 0)
   {
     ROS_ERROR("Error while opening socket");
     return false;
@@ -59,7 +58,7 @@ bool SocketCANGateway::connect()
 
   struct ifreq ifr;
 
-  strcpy(ifr.ifr_name, canbus_dev_.c_str());
+  snprintf (ifr.ifr_name, sizeof(canbus_dev_.c_str()), "%s", canbus_dev_.c_str());
 
   if (ioctl(socket_, SIOCGIFINDEX, &ifr) < 0)
   {
@@ -74,7 +73,7 @@ bool SocketCANGateway::connect()
 
   ROS_DEBUG("%s at index %d", canbus_dev_.c_str(), ifr.ifr_ifindex);
 
-  if(bind(socket_, (struct sockaddr *)&addr, sizeof(addr)) < 0)
+  if (bind(socket_, (struct sockaddr *)&addr, sizeof(addr)) < 0)
   {
     ROS_ERROR("Error in socket bind");
     return false;
@@ -82,7 +81,7 @@ bool SocketCANGateway::connect()
 
   struct timeval tv;
   tv.tv_sec = 0;
-  tv.tv_usec = 1; // microseconds
+  tv.tv_usec = 1;  // microseconds
 
   setsockopt(socket_, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 
@@ -159,10 +158,10 @@ void SocketCANGateway::msgToFrame(Message* msg, can_frame* frame)
 {
   msg->id = frame->can_id & CAN_EFF_MASK;
   msg->len = frame->can_dlc;
-  for(int i = 0; i < msg->len; i++)
+  for (int i = 0; i < msg->len; i++)
   {
     msg->data[i] = frame->data[i];
   }
 }
 
-}
+}  // namespace puma_motor_driver
