@@ -146,7 +146,7 @@ void SocketCANGateway::queue(const Message& msg)
 
 bool SocketCANGateway::sendAllQueued()
 {
-  for (int i = 0; i <= write_frames_index_; i++)
+  for (int i = 0; i < write_frames_index_; i++)
   {
     ROS_DEBUG("Writing ID 0x%08x, data (%d)", write_frames_[i].can_id, write_frames_[i].can_dlc);
     int bytes = write(socket_, &write_frames_[i], sizeof(struct can_frame));
