@@ -16,6 +16,7 @@
   <run_depend>sensor_msgs</run_depend>
   <run_depend>serial</run_depend>
   <run_depend>puma_motor_msgs</run_depend>
+  <run_depend>can-utils</run_depend>
 
   <export>
   </export>
