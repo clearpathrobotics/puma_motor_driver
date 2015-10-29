@@ -12,7 +12,7 @@ namespace puma_motor_driver
 {
 
 MultiDriverNode::MultiDriverNode(ros::NodeHandle& nh, std::vector<puma_motor_driver::Driver>& drivers)
-  : nh_(nh), drivers_(drivers)
+  : nh_(nh), drivers_(drivers), active_(false)
   {
     feedback_pub_ = nh_.advertise<puma_motor_msgs::MultiFeedback>("feedback", 5);
     status_pub_ = nh_.advertise<puma_motor_msgs::MultiStatus>("status", 5);
@@ -69,12 +69,23 @@ void MultiDriverNode::publishStatus()
 
 void MultiDriverNode::statusTimerCb(const ros::TimerEvent&)
 {
-  publishStatus();
+  if (active_)
+  {
+    publishStatus();
+  }
 }
 
 void MultiDriverNode::feedbackTimerCb(const ros::TimerEvent&)
 {
-  publishFeedback();
+  if (active_)
+  {
+    publishFeedback();
+  }
+}
+
+void MultiDriverNode::activePublishers(bool activate)
+{
+  active_ = activate;
 }
 
 }  // puma_motor_driver namespace

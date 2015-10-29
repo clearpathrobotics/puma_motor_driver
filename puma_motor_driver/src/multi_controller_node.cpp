@@ -142,6 +142,7 @@ public:
           if (driver.lastPower() != 0)
           {
             active_ = false;
+            multi_driver_node_->activePublishers(active_);
             ROS_WARN("There was a power rest on Dev: %d, will reconfigure all drivers.", driver.deviceNumber());
             BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
             {
@@ -198,6 +199,7 @@ public:
         && active_ == false)
       {
         active_ = true;
+        multi_driver_node_->activePublishers(active_);
         ROS_INFO("All contollers active.");
       }
 
