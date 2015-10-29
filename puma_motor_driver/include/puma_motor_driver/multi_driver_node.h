@@ -22,6 +22,8 @@ public:
   void publishStatus();
   void feedbackTimerCb(const ros::TimerEvent&);
   void statusTimerCb(const ros::TimerEvent&);
+  void activePublishers(bool activate);
+
 private:
   ros::NodeHandle nh_;
   std::vector<puma_motor_driver::Driver>& drivers_;
@@ -34,6 +36,8 @@ private:
 
   ros::Timer status_pub_timer_;
   ros::Timer feedback_pub_timer_;
+
+  bool active_;
 
 };
 
