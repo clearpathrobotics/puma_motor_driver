@@ -36,18 +36,18 @@ namespace puma_motor_driver
 class Gateway
 {
 public:
-  virtual bool connect()=0;
-  virtual bool isConnected()=0;
+  virtual bool connect() = 0;
+  virtual bool isConnected() = 0;
 
   /**
    * Queue specified message to be sent on the bus.
    */
-  virtual void queue(const Message& msg)=0;
+  virtual void queue(const Message& msg) = 0;
 
   /**
    * Send the queued messages on the bus.
    */
-  virtual bool sendAllQueued()=0;
+  virtual bool sendAllQueued() = 0;
 
   /**
    * Receive the next available message from the bus, blocking for
@@ -55,9 +55,9 @@ public:
    *
    * \return True if a message was returned false if timeout occurred.
    */
-  virtual bool recv(Message* msg)=0;
+  virtual bool recv(Message* msg) = 0;
 };
 
-}  // puma_motor_driver
+}  // namespace puma_motor_driver
 
 #endif  // PUMA_MOTOR_DRIVER_GATEWAY_H
