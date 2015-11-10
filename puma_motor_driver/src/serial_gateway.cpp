@@ -66,7 +66,7 @@ void SerialGateway::queue(const Message& msg)
   queue('\xff');
   queue(4 + msg.len);
 
-  encodeAndQueue((uint8_t*)&msg.id, 4);
+  encodeAndQueue(reinterpret_cast<uint8_t*>(msg.id), 4);
   encodeAndQueue(msg.data, msg.len);
 }
 
@@ -75,7 +75,7 @@ bool SerialGateway::recv(Message* msg)
   int bytes_dropped = 0;
 
   // Look for header byte.
-  while(1)
+  while (1)
   {
     uint8_t header_byte;
     if (!read(&header_byte))
@@ -107,7 +107,7 @@ bool SerialGateway::recv(Message* msg)
   }
 
   // CAN ID in little endian.
-  if (!readAndDecode((uint8_t*)&msg->id, 4))
+  if (!readAndDecode(reinterpret_cast<uint8_t*>(msg->id), 4))
   {
     ROS_WARN_NAMED("serial", "Problem reading ID, dropping message.");
     return false;
@@ -244,4 +244,4 @@ bool SerialGateway::readAndDecode(uint8_t* data, uint8_t len)
   return true;
 }
 
-}
+}  // namespace puma_motor_driver

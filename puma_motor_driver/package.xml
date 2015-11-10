@@ -12,11 +12,14 @@
   <build_depend>sensor_msgs</build_depend>
   <build_depend>serial</build_depend>
   <build_depend>puma_motor_msgs</build_depend>
+  <build_depend>roslaunch</build_depend>
+  <build_depend>roslint</build_depend>
   <run_depend>roscpp</run_depend>
   <run_depend>sensor_msgs</run_depend>
   <run_depend>serial</run_depend>
   <run_depend>puma_motor_msgs</run_depend>
   <run_depend>can-utils</run_depend>
+  <run_depend>joy</run_depend>
 
   <export>
   </export>

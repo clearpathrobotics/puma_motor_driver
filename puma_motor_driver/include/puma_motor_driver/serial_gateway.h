@@ -21,6 +21,8 @@ OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTE
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+#ifndef PUMA_MOTOR_DRIVER_SERIAL_GATEWAY_H
+#define PUMA_MOTOR_DRIVER_SERIAL_GATEWAY_H
 
 #include "puma_motor_driver/gateway.h"
 #include "puma_motor_driver/message.h"
@@ -33,7 +35,7 @@ namespace puma_motor_driver
 class SerialGateway : public Gateway
 {
 public:
-  SerialGateway(serial::Serial& serial);
+  explicit SerialGateway(serial::Serial& serial);
 
   virtual bool connect();
   virtual bool isConnected();
@@ -59,4 +61,6 @@ private:
   uint16_t read_buffer_len_;
 };
 
-}  // puma_motor_driver
+}  // namespace puma_motor_driver
+
+#endif  // PUMA_MOTOR_DRIVER_SERIAL_GATEWAY_H
