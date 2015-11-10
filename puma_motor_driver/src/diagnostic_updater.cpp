@@ -36,7 +36,7 @@ const char* PumaMotorDriverDiagnosticUpdater::getModeString(uint8_t mode)
   }
 }
 
-const char* PumaMotorDriverDiagnosticUpdater::getFaulString(uint8_t fault)
+const char* PumaMotorDriverDiagnosticUpdater::getFaultString(uint8_t fault)
 {
   switch(fault)
   {
@@ -64,7 +64,7 @@ void PumaMotorDriverDiagnosticUpdater::driverDiagnostics(diagnostic_updater::Dia
     stat.summaryf(Status::ERROR, "'%s' driver (%i) has a %s.",
       (last_status_->drivers[driver].device_name.c_str()),
        last_status_->drivers[driver].device_number,
-       getFaulString(last_status_->drivers[driver].fault));
+       getFaultString(last_status_->drivers[driver].fault));
   }
 
   stat.add("Driver CAN ID", static_cast<int>(last_status_->drivers[driver].device_number));
