@@ -57,11 +57,13 @@ void PumaMotorDriverDiagnosticUpdater::driverDiagnostics(diagnostic_updater::Dia
 {
   if (last_status_->drivers[driver].fault == 0)
   {
-    stat.summary(Status::OK, "motor driver is OK.");
+    stat.summary(Status::OK, "Motor driver is OK.");
   }
   else
   {
-    stat.summaryf(Status::ERROR, "'%s' driver (%i) has a current fault.",
+    stat.summaryf(Status::ERROR, "'%s' driver (%i) has a %s.",
+      (last_status_->drivers[driver].device_name.c_str()),
+       last_status_->drivers[driver].device_number,
        getFaulString(last_status_->drivers[driver].fault));
   }
 
