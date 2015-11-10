@@ -28,7 +28,7 @@ private:
   puma_motor_msgs::MultiStatus::ConstPtr last_status_;
   bool initialized_;
 
-  static const char* getFaulString(uint8_t fault);
+  static const char* getFaultString(uint8_t fault);
   static const char* getModeString(uint8_t mode);
 };
 
