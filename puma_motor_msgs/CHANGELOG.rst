@@ -2,8 +2,8 @@
 Changelog for package puma_motor_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.1 (2015-11-20)
+------------------
 * Package format 2.
 * Contributors: Mike Purvis
 
