@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<package>
+<package format="2">
   <name>puma_motor_driver</name>
   <version>0.1.0</version>
   <description>A ROS driver for Puma single-channel motor control board.</description>
@@ -8,19 +8,15 @@
   <license>BSD</license>
 
   <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>roscpp</build_depend>
-  <build_depend>sensor_msgs</build_depend>
-  <build_depend>serial</build_depend>
-  <build_depend>puma_motor_msgs</build_depend>
-  <build_depend>roslaunch</build_depend>
-  <build_depend>roslint</build_depend>
-  <run_depend>roscpp</run_depend>
-  <run_depend>sensor_msgs</run_depend>
-  <run_depend>serial</run_depend>
-  <run_depend>puma_motor_msgs</run_depend>
-  <run_depend>can-utils</run_depend>
-  <run_depend>joy</run_depend>
+  <depend>diagnostic_updater</depend>
+  <depend>puma_motor_msgs</depend>
+  <depend>roscpp</depend>
+  <depend>sensor_msgs</depend>
+  <depend>serial</depend>
 
-  <export>
-  </export>
+  <exec_depend>can-utils</exec_depend>
+  <exec_depend>joy</exec_depend>
+
+  <test_depend>roslaunch</test_depend>
+  <test_depend>roslint</test_depend>
 </package>

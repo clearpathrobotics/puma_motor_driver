@@ -2,17 +2,17 @@ cmake_minimum_required(VERSION 2.8.3)
 project(puma_motor_driver)
 
 find_package(catkin REQUIRED COMPONENTS
+  diagnostic_updater
+  puma_motor_msgs
   roscpp
   sensor_msgs
   serial
-  puma_motor_msgs
-  roslint
 )
 
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES puma_motor_driver
-  CATKIN_DEPENDS roscpp sensor_msgs serial puma_motor_msgs
+  CATKIN_DEPENDS diagnostic_updater puma_motor_msgs roscpp sensor_msgs serial
 )
 
 include_directories(
@@ -40,20 +40,6 @@ target_link_libraries(puma_multi_controller_node
   ${catkin_LIBRARIES}
 )
 
-file(GLOB LINT_SRCS
-  src/*.cpp
-  include/puma_motor_driver/driver.h
-  include/puma_motor_driver/gateway.h
-  include/puma_motor_driver/message.h
-  include/puma_motor_driver/serial_gateway.h
-  include/puma_motor_driver/socketcan_gateway.h
-  include/puma_motor_driver/multi_driver_node.h
-  include/puma_motor_driver/diagnostic_updater.h
-  test/*.cpp)
-roslint_cpp(${LINT_SRCS})
-roslint_add_test()
-
-
 # Mark executables and/or libraries for installation
 install(TARGETS puma_motor_driver puma_multi_controller_node
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -67,6 +53,19 @@ install(DIRECTORY include/${PROJECT_NAME}/
 )
 
 if(CATKIN_ENABLE_TESTING)
+  find_package(roslint REQUIRED)
+  file(GLOB LINT_SRCS
+    src/*.cpp
+    include/puma_motor_driver/driver.h
+    include/puma_motor_driver/gateway.h
+    include/puma_motor_driver/message.h
+    include/puma_motor_driver/serial_gateway.h
+    include/puma_motor_driver/socketcan_gateway.h
+    include/puma_motor_driver/multi_driver_node.h
+    include/puma_motor_driver/diagnostic_updater.h
+    test/*.cpp)
+  roslint_cpp(${LINT_SRCS})
+  roslint_add_test()
 
   find_package(roslaunch REQUIRED)
   roslaunch_add_file_check(launch/mecanum.launch)
