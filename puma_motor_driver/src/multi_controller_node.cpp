@@ -45,7 +45,6 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 
 class MultiControllerNode
 {
-
 public:
   MultiControllerNode(ros::NodeHandle& nh, ros::NodeHandle& nh_private,
                       puma_motor_driver::Gateway& gateway) :

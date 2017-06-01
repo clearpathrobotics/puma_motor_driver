@@ -99,12 +99,28 @@ void Driver::sendFixed16x16(uint32_t id, double value)
   gateway_.queue(msg);
 }
 
-bool Driver::verifyRawData(uint8_t* received, double expected)
+bool Driver::verifyRaw16x16(uint8_t* received, double expected)
 {
   uint8_t data[4];
   int32_t output_value = static_cast<int32_t>(static_cast<double>((1<<16) * expected));
   memcpy(data, &output_value, 4);
   for (uint8_t i = 0; i < 4; i++)
+  {
+    if (*received != data[i])
+    {
+      return false;
+    }
+    received++;
+  }
+  return true;
+}
+
+bool Driver::verifyRaw8x8(uint8_t* received, float expected)
+{
+  uint8_t data[2];
+  int32_t output_value = static_cast<int32_t>(static_cast<float>((1<<8) * expected));
+  memcpy(data, &output_value, 2);
+  for (uint8_t i = 0; i < 2; i++)
   {
     if (*received != data[i])
     {
@@ -215,7 +231,7 @@ void Driver::verifyParams()
       }
       break;
     case 7:
-      if (verifyRawData(getRawP(), gain_p_))
+      if (verifyRaw16x16(getRawP(), gain_p_))
       {
         state_++;
         ROS_DEBUG("Dev: %i P gain constant was set to %f and %f was requested.", device_number_, getP(), gain_p_);
@@ -237,7 +253,7 @@ void Driver::verifyParams()
       }
       break;
     case 8:
-      if (verifyRawData(getRawI(), gain_i_))
+      if (verifyRaw16x16(getRawI(), gain_i_))
       {
         state_++;
         ROS_DEBUG("Dev: %i I gain constant was set to %f and %f was requested.", device_number_, getI(), gain_i_);
@@ -259,7 +275,7 @@ void Driver::verifyParams()
       }
       break;
     case 9:
-      if (verifyRawData(getRawD(), gain_d_))
+      if (verifyRaw16x16(getRawD(), gain_d_))
       {
         state_ = 200;
         ROS_DEBUG("Dev: %i D gain constant was set to %f and %f was requested.", device_number_, getD(), gain_d_);
@@ -511,7 +527,7 @@ void Driver::updateGains()
 float Driver::lastDutyCycle()
 {
   StatusField* field = statusFieldForMessage(Message(LM_API_STATUS_VOLTOUT));
-  return field->interpretFixed8x8() / 128.0;
+  return (field->interpretFixed8x8() / 128.0);
 }
 
 float Driver::lastBusVoltage()
@@ -535,7 +551,7 @@ double Driver::lastPosition()
 double Driver::lastSpeed()
 {
   StatusField* field = statusFieldForMessage(Message(LM_API_STATUS_SPD));
-  return field->interpretFixed16x16() * ((2 * M_PI) / (gear_ratio_ * 60));  // Convert RPM to rad/s
+  return (field->interpretFixed16x16() * ((2 * M_PI) / (gear_ratio_ * 60)));  // Convert RPM to rad/s
 }
 
 uint8_t Driver::lastFault()
@@ -590,6 +606,9 @@ double Driver::lastSetpoint()
     case puma_motor_msgs::Status::MODE_VOLTAGE:
       return statusDutyCycleGet();
       break;
+    default:
+      return 0;
+      break;
   }
 }
 double Driver::statusSpeedGet()
@@ -601,7 +620,7 @@ double Driver::statusSpeedGet()
 float Driver::statusDutyCycleGet()
 {
   StatusField* field = statusFieldForMessage(Message(LM_API_VOLT_SET));
-  return field->interpretFixed8x8() / 128.0;
+  return (field->interpretFixed8x8() / 128.0);
 }
 
 float Driver::statusCurrentGet()
@@ -630,7 +649,7 @@ uint8_t Driver::spdEncoderRef()
 uint16_t Driver::encoderCounts()
 {
   StatusField* field = statusFieldForMessage(Message(LM_API_CFG_ENC_LINES));
-  return (uint16_t)field->data[0] | (uint16_t)field->data[1] << 8;
+  return (static_cast<uint16_t>(field->data[0]) | static_cast<uint16_t>(field->data[1] << 8));
 }
 
 double Driver::getP()
@@ -743,7 +762,7 @@ uint8_t* Driver::getRawD()
 Driver::StatusField* Driver::statusFieldForMessage(const Message& msg)
 {
   // If it's not a STATUS message, there is no status field box to return.
-  if (msg.getApi() & CAN_MSGID_API_M != CAN_API_MC_STATUS)
+  if ((msg.getApi() & CAN_MSGID_API_M) != CAN_API_MC_STATUS)
   {
     return NULL;
   }

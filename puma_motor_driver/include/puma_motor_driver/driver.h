@@ -385,12 +385,20 @@ private:
   void sendFixed16x16(uint32_t id, double value);
 
   /**
-   * Comparing the raw bytes of the fixed-point numbers
+   * Comparing the raw bytes of the 16x16 fixed-point numbers
     * to avoid comparing the floating point values.
    *
    * @return boolean if received is equal to expected.
    */
-  bool verifyRawData(uint8_t* received, double expected);
+  bool verifyRaw16x16(uint8_t* received, double expected);
+
+  /**
+   * Comparing the raw bytes of the 8x8 fixed-point numbers
+    * to avoid comparing the floating point values.
+   *
+   * @return boolean if received is equal to expected.
+   */
+  bool verifyRaw8x8(uint8_t* received, float expected);
 
   StatusField status_fields_[12];
 

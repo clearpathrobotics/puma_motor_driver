@@ -29,7 +29,8 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 
 TEST(TestFixedPoint16x16, test16x16interpret)
 {
-  double cases[7] = {
+  double cases[7] =
+  {
     0.0,
     1.0,
     -1.0,
@@ -50,7 +51,8 @@ TEST(TestFixedPoint16x16, test16x16interpret)
 
 TEST(TestFixedPoint8x8, test8x8interpret)
 {
-  float cases[7] = {
+  float cases[7] =
+  {
     0.0,
     1.0,
     -1.0,
