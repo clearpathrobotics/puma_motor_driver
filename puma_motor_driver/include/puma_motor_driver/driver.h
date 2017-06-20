@@ -351,13 +351,12 @@ public:
 
     float interpretFixed8x8()
     {
-      return static_cast<int8_t>(data[1]) + static_cast<float>(data[0]) / static_cast<float>(1<<8);
+      return *(reinterpret_cast<int16_t*>(data)) / static_cast<float>(1<<8);
     }
 
     double interpretFixed16x16()
     {
-      return ((data[0] | static_cast<int32_t>(data[1]) << 8 |
-        static_cast<int32_t>(data[2]) << 16 | static_cast<int32_t>(data[3]) << 24)) / static_cast<double>(1<<16);
+      return *(reinterpret_cast<int32_t*>(data)) / static_cast<double>(1<<16);
     }
   };
 
@@ -386,12 +385,20 @@ private:
   void sendFixed16x16(uint32_t id, double value);
 
   /**
-   * Comparing the raw bytes of the fixed-point numbers
+   * Comparing the raw bytes of the 16x16 fixed-point numbers
     * to avoid comparing the floating point values.
    *
    * @return boolean if received is equal to expected.
    */
-  bool verifyRawData(uint8_t* received, double expected);
+  bool verifyRaw16x16(uint8_t* received, double expected);
+
+  /**
+   * Comparing the raw bytes of the 8x8 fixed-point numbers
+    * to avoid comparing the floating point values.
+   *
+   * @return boolean if received is equal to expected.
+   */
+  bool verifyRaw8x8(uint8_t* received, float expected);
 
   StatusField status_fields_[12];
 
