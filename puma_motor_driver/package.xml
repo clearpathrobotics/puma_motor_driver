@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>puma_motor_driver</name>
-  <version>0.1.1</version>
+  <version>0.2.0</version>
   <description>A ROS driver for Puma single-channel motor control board.</description>
 
   <maintainer email="mpurvis@clearpathrobotics.com">Mike Purvis</maintainer>
