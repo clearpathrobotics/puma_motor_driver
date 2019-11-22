@@ -2,8 +2,8 @@
 Changelog for package puma_motor_driver
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.2.1 (2019-11-22)
+------------------
 * [puma_motor_driver] Disabld checking of message if it was a status cause it was causing issues.
 * Contributors: Tony Baltovski
 
