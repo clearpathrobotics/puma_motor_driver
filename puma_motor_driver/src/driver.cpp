@@ -762,10 +762,10 @@ uint8_t* Driver::getRawD()
 Driver::StatusField* Driver::statusFieldForMessage(const Message& msg)
 {
   // If it's not a STATUS message, there is no status field box to return.
-  if ((msg.getApi() & CAN_MSGID_API_M) != CAN_API_MC_STATUS)
-  {
-    return NULL;
-  }
+  // if ((msg.getApi() & CAN_MSGID_API_M) != CAN_API_MC_STATUS)
+  // {
+  //   return NULL;
+  // }
 
   uint32_t status_field_index = (msg.getApi() & CAN_MSGID_API_ID_M) >> CAN_MSGID_API_S;
   return &status_fields_[status_field_index];
