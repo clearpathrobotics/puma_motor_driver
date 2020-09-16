@@ -24,7 +24,7 @@ include_directories(
 
 add_library(puma_motor_driver
   src/driver.cpp
-  src/serial_gateway.cpp
+  #src/serial_gateway.cpp
   src/socketcan_gateway.cpp
   src/multi_driver_node.cpp
   src/diagnostic_updater.cpp
@@ -61,7 +61,7 @@ if(CATKIN_ENABLE_TESTING)
     include/puma_motor_driver/driver.h
     include/puma_motor_driver/gateway.h
     include/puma_motor_driver/message.h
-    include/puma_motor_driver/serial_gateway.h
+    #include/puma_motor_driver/serial_gateway.h
     include/puma_motor_driver/socketcan_gateway.h
     include/puma_motor_driver/multi_driver_node.h
     include/puma_motor_driver/diagnostic_updater.h

@@ -30,7 +30,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 #include "ros/ros.h"
 #include "sensor_msgs/JointState.h"
 #include "puma_motor_driver/driver.h"
-#include "puma_motor_driver/serial_gateway.h"
+// #include "puma_motor_driver/serial_gateway.h"
 #include "puma_motor_driver/socketcan_gateway.h"
 #include "puma_motor_driver/multi_driver_node.h"
 #include "puma_motor_driver/diagnostic_updater.h"
@@ -226,7 +226,7 @@ int main(int argc, char *argv[])
   ros::init(argc, argv, "puma_multi_controller_node");
   ros::NodeHandle nh, nh_private("~");
 
-  std::string serial_port;
+  // std::string serial_port;
   std::string canbus_dev;
 
   std::unique_ptr<puma_motor_driver::Gateway> gateway;
@@ -235,12 +235,12 @@ int main(int argc, char *argv[])
   {
     gateway.reset(new puma_motor_driver::SocketCANGateway(canbus_dev));
   }
-  else if (nh_private.getParam("serial_port", serial_port))
-  {
-    serial::Serial serial;
-    serial.setPort(serial_port);
-    gateway.reset(new puma_motor_driver::SerialGateway(serial));
-  }
+  // else if (nh_private.getParam("serial_port", serial_port))
+  // {
+  //   serial::Serial serial;
+  //   serial.setPort(serial_port);
+  //   gateway.reset(new puma_motor_driver::SerialGateway(serial));
+  // }
   else
   {
     ROS_FATAL("No communication method given.");
