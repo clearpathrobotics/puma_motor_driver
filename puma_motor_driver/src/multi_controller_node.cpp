@@ -25,9 +25,6 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 #include <string>
 #include <vector>
 
-#include "boost/foreach.hpp"
-#include "boost/scoped_ptr.hpp"
-#include "boost/shared_ptr.hpp"
 #include "serial/serial.h"
 
 #include "ros/ros.h"
@@ -67,7 +64,7 @@ public:
     nh_private_.param<int>("frequency", freq_, 25);
 
 
-    BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
+    for (auto& driver : drivers_)
     {
       driver.clearStatusCache();
       driver.setEncoderCPR(encoder_cpr_);
@@ -78,12 +75,11 @@ public:
     multi_driver_node_.reset(new puma_motor_driver::MultiDriverNode(nh_, drivers_));
   }
 
-
   void cmdCallback(const sensor_msgs::JointStateConstPtr& cmd_msg)
   {
     if (active_)
     {
-      BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
+      for (auto& driver : drivers_)
       {
         for (int i = 0; i < cmd_msg->name.size(); i++)
         {
@@ -136,21 +132,21 @@ public:
       if (active_)
       {
         // Checks to see if power flag has been reset for each driver
-        BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
+        for (auto& driver : drivers_)
         {
           if (driver.lastPower() != 0)
           {
             active_ = false;
             multi_driver_node_->activePublishers(active_);
             ROS_WARN("Power reset detected on device ID %d, will reconfigure all drivers.", driver.deviceNumber());
-            BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
+            for (auto& driver : drivers_)
             {
               driver.resetConfiguration();
             }
           }
         }
         // Queue data requests for the drivers in order to assemble an amalgamated status message.
-        BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
+        for (auto& driver : drivers_)
         {
           driver.requestStatusMessages();
           driver.requestFeedbackSetpoint();
@@ -159,7 +155,7 @@ public:
       else
       {
         // Set parameters for each driver.
-        BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
+        for (auto& driver : drivers_)
         {
           driver.configureParams();
         }
@@ -170,12 +166,11 @@ public:
       gateway_.sendAllQueued();
       // ros::Duration(0.005).sleep();
 
-
       // Process all received messages through the connected driver instances.
       puma_motor_driver::Message recv_msg;
       while (gateway_.recv(&recv_msg))
       {
-        BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
+        for (auto& driver : drivers_)
         {
           driver.processMessage(recv_msg);
         }
@@ -184,7 +179,7 @@ public:
       // Check parameters of each driver instance.
       if (!active_)
       {
-        BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
+        for (auto& driver : drivers_)
         {
           driver.verifyParams();
         }
@@ -222,20 +217,19 @@ private:
   bool active_;
 
   ros::Subscriber cmd_sub_;
-  boost::shared_ptr<puma_motor_driver::MultiDriverNode> multi_driver_node_;
+  std::shared_ptr<puma_motor_driver::MultiDriverNode> multi_driver_node_;
 };
 
 
 int main(int argc, char *argv[])
 {
   ros::init(argc, argv, "puma_multi_controller_node");
-  ros::NodeHandle nh;
-  ros::NodeHandle nh_private("~");
+  ros::NodeHandle nh, nh_private("~");
 
   std::string serial_port;
   std::string canbus_dev;
 
-  boost::scoped_ptr<puma_motor_driver::Gateway> gateway;
+  std::unique_ptr<puma_motor_driver::Gateway> gateway;
 
   if (nh_private.getParam("canbus_dev", canbus_dev))
   {
@@ -250,7 +244,7 @@ int main(int argc, char *argv[])
   else
   {
     ROS_FATAL("No communication method given.");
-    return 1;
+    return -1;
   }
 
   puma_motor_driver::PumaMotorDriverDiagnosticUpdater puma_motor_driver_diagnostic_updater;

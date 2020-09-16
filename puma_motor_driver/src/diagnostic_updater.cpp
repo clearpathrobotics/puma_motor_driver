@@ -23,7 +23,6 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 */
 #include <string>
 
-#include "boost/foreach.hpp"
 #include "diagnostic_updater/update_functions.h"
 #include "puma_motor_driver/diagnostic_updater.h"
 #include "puma_motor_msgs/Status.h"

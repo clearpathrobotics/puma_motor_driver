@@ -57,7 +57,7 @@ void Driver::processMessage(const Message& received_msg)
   if (!field) return;
 
   // Copy the received data and mark that field as received.
-  memcpy(field->data, received_msg.data, received_msg.len);
+  std::memcpy(field->data, received_msg.data, received_msg.len);
   field->received = true;
 }
 
@@ -66,7 +66,7 @@ void Driver::sendUint8(uint32_t id, uint8_t value)
   Message msg;
   msg.id = id;
   msg.len = 1;
-  memcpy(msg.data, &value, msg.len);
+  std::memcpy(msg.data, &value, msg.len);
   gateway_.queue(msg);
 }
 
@@ -75,7 +75,7 @@ void Driver::sendUint16(uint32_t id, uint16_t value)
   Message msg;
   msg.id = id;
   msg.len = 2;
-  memcpy(msg.data, &value, msg.len);
+  std::memcpy(msg.data, &value, msg.len);
   gateway_.queue(msg);
 }
 
@@ -85,7 +85,7 @@ void Driver::sendFixed8x8(uint32_t id, float value)
   msg.id = id;
   msg.len = 2;
   int16_t output_value = static_cast<int16_t>(static_cast<float>(1<<8) * value);
-  memcpy(msg.data, &output_value, msg.len);
+  std::memcpy(msg.data, &output_value, msg.len);
   gateway_.queue(msg);
 }
 
@@ -95,7 +95,7 @@ void Driver::sendFixed16x16(uint32_t id, double value)
   msg.id = id;
   msg.len = 4;
   int32_t output_value = static_cast<int32_t>(static_cast<double>((1<<16) * value));
-  memcpy(msg.data, &output_value, msg.len);
+  std::memcpy(msg.data, &output_value, msg.len);
   gateway_.queue(msg);
 }
 
@@ -103,7 +103,7 @@ bool Driver::verifyRaw16x16(uint8_t* received, double expected)
 {
   uint8_t data[4];
   int32_t output_value = static_cast<int32_t>(static_cast<double>((1<<16) * expected));
-  memcpy(data, &output_value, 4);
+  std::memcpy(data, &output_value, 4);
   for (uint8_t i = 0; i < 4; i++)
   {
     if (*received != data[i])
@@ -119,7 +119,7 @@ bool Driver::verifyRaw8x8(uint8_t* received, float expected)
 {
   uint8_t data[2];
   int32_t output_value = static_cast<int32_t>(static_cast<float>((1<<8) * expected));
-  memcpy(data, &output_value, 2);
+  std::memcpy(data, &output_value, 2);
   for (uint8_t i = 0; i < 2; i++)
   {
     if (*received != data[i])
