@@ -14,6 +14,8 @@
   <depend>sensor_msgs</depend>
   <depend>serial</depend>
 
+  <build_depend>socketcan_interface</build_depend>
+
   <exec_depend>can-utils</exec_depend>
   <exec_depend>joy</exec_depend>
 

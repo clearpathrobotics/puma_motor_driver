@@ -42,10 +42,10 @@ TEST(TestFixedPoint16x16, test16x16interpret)
 
   for (int i = 0; i < 7; i++)
   {
-    puma_motor_driver::Driver::StatusField status;
+    puma_motor_driver::Driver::Field field;
     int32_t input = cases[i] * static_cast<double>(1<<16);
-    memcpy(&status.data, &input, 4);
-    EXPECT_NEAR(cases[i], status.interpretFixed16x16(), 1.0 / static_cast<double>(1<<16));
+    memcpy(&field.data, &input, 4);
+    EXPECT_NEAR(cases[i], field.interpretFixed16x16(), 1.0 / static_cast<double>(1<<16));
   }
 }
 
@@ -64,10 +64,10 @@ TEST(TestFixedPoint8x8, test8x8interpret)
 
   for (int i = 0; i < 7; i++)
   {
-    puma_motor_driver::Driver::StatusField status;
+    puma_motor_driver::Driver::Field field;
     int16_t input = cases[i] * static_cast<float>(1<<8);
-    memcpy(&status.data, &input, 2);
-    EXPECT_NEAR(cases[i], status.interpretFixed8x8(), 1.0 / static_cast<float>(1<<8));
+    memcpy(&field.data, &input, 2);
+    EXPECT_NEAR(cases[i], field.interpretFixed8x8(), 1.0 / static_cast<float>(1<<8));
   }
 }
 

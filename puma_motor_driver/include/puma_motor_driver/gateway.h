@@ -37,17 +37,14 @@ class Gateway
 {
 public:
   virtual bool connect() = 0;
-  virtual bool isConnected() = 0;
+  virtual bool isConnected() const = 0;
+
+  // virtual void run() = 0;
 
   /**
    * Queue specified message to be sent on the bus.
    */
   virtual void queue(const Message& msg) = 0;
-
-  /**
-   * Send the queued messages on the bus.
-   */
-  virtual bool sendAllQueued() = 0;
 
   /**
    * Receive the next available message from the bus, blocking for

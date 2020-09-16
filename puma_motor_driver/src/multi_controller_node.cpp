@@ -66,7 +66,7 @@ public:
 
     for (auto& driver : drivers_)
     {
-      driver.clearStatusCache();
+      driver.clearMsgCache();
       driver.setEncoderCPR(encoder_cpr_);
       driver.setGearRatio(gear_ratio_);
       driver.setMode(desired_mode_, 0.1, 0.01, 0.0);
@@ -99,6 +99,17 @@ public:
     }
   }
 
+  bool areAllActive()
+  {
+    for (auto& driver : drivers_)
+    {
+      if (!driver.isConfigured())
+      {
+        return false;
+      }
+    }
+    return true;
+  }
 
   bool connectIfNotConnected()
   {
@@ -160,10 +171,8 @@ public:
           driver.configureParams();
         }
       }
-      gateway_.sendAllQueued();
       // Process ROS callbacks, which will queue command messages to the drivers.
       ros::spinOnce();
-      gateway_.sendAllQueued();
       // ros::Duration(0.005).sleep();
 
       // Process all received messages through the connected driver instances.
@@ -186,11 +195,7 @@ public:
       }
 
       // Verify that the all drivers are configured.
-      if ( drivers_[0].isConfigured() == true
-        && drivers_[1].isConfigured() == true
-        && drivers_[2].isConfigured() == true
-        && drivers_[3].isConfigured() == true
-        && active_ == false)
+      if (areAllActive() == true && active_ == false)
       {
         active_ = true;
         multi_driver_node_->activePublishers(active_);

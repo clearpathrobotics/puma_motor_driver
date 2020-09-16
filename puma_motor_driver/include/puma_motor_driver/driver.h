@@ -39,9 +39,11 @@ class Message;
 class Driver
 {
 public:
-  Driver(Gateway& gateway, uint8_t device_number, std::string device_name);
+  Driver(Gateway& gateway, const uint8_t& device_number, const std::string& device_name);
 
   void processMessage(const Message& received_msg);
+
+  double radPerSecToRpm() const;
 
   /**
    * Sends messages to the motor controller requesting all missing elements to
@@ -89,19 +91,19 @@ public:
    * Clear the received flags from the status cache, in preparation for the next
    * request batch to go out.
    */
-  void clearStatusCache();
+  void clearMsgCache();
   /**
    * Command the supplied value in open-loop voltage control.
    *
    * @param[in] cmd Value to command, ranging from -1.0 to 1.0, where zero is neutral.
    */
-  void commandDutyCycle(float cmd);
+  void commandDutyCycle(const float cmd);
   /**
    * Command the desired speed set-point in close-loop speed control.
    *
    * @param[in] cmd Value to command in rad/s.
    */
-  void commandSpeed(double cmd);
+  void commandSpeed(const double cmd);
   // void currentSet(float cmd);
   // void positionSet(float cmd);
   // void neutralSet();
@@ -111,19 +113,19 @@ public:
    *
    * @param[in] encoder_cpr Value to set.
    */
-  void setEncoderCPR(uint16_t encoder_cpr);
+  void setEncoderCPR(const uint16_t encoder_cpr);
   /**
    * Set the gear ratio of the motors.
    *
    * @param[in] gear_ratio Value to set.
    */
-  void setGearRatio(float gear_ratio);
+  void setGearRatio(const float gear_ratio);
   /**
    * Set the control mode of the motor drivers.
    *
    * @param[in] mode Value to set.
    */
-  void setMode(uint8_t mode);
+  void setMode(const uint8_t mode);
   /**
    * Set the control mode of the motor drivers
    * with PID gains for close loop control.
@@ -133,7 +135,7 @@ public:
    * @param[in] i Value to set.
    * @param[in] d Value to set.
    */
-  void setMode(uint8_t mode, double p, double i, double d);
+  void setMode(const uint8_t mode, const double p, const double i, const double d);
   /**
    * Set the control mode's PID gains for close loop control.
    *
@@ -141,7 +143,7 @@ public:
    * @param[in] i Value to set.
    * @param[in] d Value to set.
    */
-  void setGains(double p, double i, double d);
+  void setGains(const double p, const double i, const double d);
 
   /**
    * Process the last received fault response.
@@ -232,7 +234,7 @@ public:
    *
    * @return bool if driver is configured.
    */
-  bool isConfigured();
+  bool isConfigured() const;
   void resetConfiguration();
   /**
    * Reset the configured flag to restart the verification process.
@@ -332,19 +334,14 @@ public:
    */
   double statusPositionGet();
 
-  /** Assignment operator, necessary on GCC 4.8 to copy instances
-   *  into a vector. */
-  Driver operator=(const Driver& rhs)
-  {
-    return Driver(gateway_, device_number_, device_name_);
-  }
 
-  std::string deviceName() { return device_name_; }
 
-  uint8_t deviceNumber() { return device_number_; }
+  std::string deviceName() const { return device_name_; }
+
+  uint8_t deviceNumber() const { return device_number_; }
 
   // Only used internally but is used for testing.
-  struct StatusField
+  struct Field
   {
     uint8_t data[4];
     bool received;
@@ -379,10 +376,10 @@ private:
   /**
    * Helpers to generate data for CAN messages.
    */
-  void sendUint8(uint32_t id, uint8_t value);
-  void sendUint16(uint32_t id, uint16_t value);
-  void sendFixed8x8(uint32_t id, float value);
-  void sendFixed16x16(uint32_t id, double value);
+  void sendUint8(const uint32_t id, const uint8_t value);
+  void sendUint16(const uint32_t id, const uint16_t value);
+  void sendFixed8x8(const uint32_t id, const float value);
+  void sendFixed16x16(const uint32_t id, const double value);
 
   /**
    * Comparing the raw bytes of the 16x16 fixed-point numbers
@@ -390,7 +387,7 @@ private:
    *
    * @return boolean if received is equal to expected.
    */
-  bool verifyRaw16x16(uint8_t* received, double expected);
+  bool verifyRaw16x16(const uint8_t* received, const double expected);
 
   /**
    * Comparing the raw bytes of the 8x8 fixed-point numbers
@@ -398,11 +395,23 @@ private:
    *
    * @return boolean if received is equal to expected.
    */
-  bool verifyRaw8x8(uint8_t* received, float expected);
+  bool verifyRaw8x8(const uint8_t* received, const float expected);
 
-  StatusField status_fields_[12];
+  Field voltage_fields_[4];
+  Field spd_fields_[7];
+  Field vcomp_fields_[5];
+  Field pos_fields_[7];
+  Field ictrl_fields_[6];
+  Field status_fields_[15];
+  Field cfg_fields_[15];
 
-  StatusField* statusFieldForMessage(const Message& msg);
+  Field* voltageFieldForMessage(const Message& msg);
+  Field* spdFieldForMessage(const Message& msg);
+  Field* vcompFieldForMessage(const Message& msg);
+  Field* posFieldForMessage(const Message& msg);
+  Field* ictrlFieldForMessage(const Message& msg);
+  Field* statusFieldForMessage(const Message& msg);
+  Field* cfgFieldForMessage(const Message& msg);
 };
 
 }  // namespace puma_motor_driver

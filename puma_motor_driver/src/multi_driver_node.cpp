@@ -102,11 +102,11 @@ void MultiDriverNode::feedbackTimerCb(const ros::TimerEvent&)
 {
   if (active_)
   {
-    publishFeedback();
+    this->publishFeedback();
   }
 }
 
-void MultiDriverNode::activePublishers(bool activate)
+void MultiDriverNode::activePublishers(const bool activate)
 {
   active_ = activate;
 }
