@@ -22,6 +22,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCL
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <string>
+
 #include <socketcan_interface/make_shared.h>
 
 #include "puma_motor_driver/socketcan_gateway.h"
@@ -46,7 +48,8 @@ SocketCANGateway::~SocketCANGateway()
 
 bool SocketCANGateway::connect()
 {
-  msg_listener_ = can_driver_->createMsgListener(can::CommInterface::FrameDelegate(this, &SocketCANGateway::msgCallback));
+  msg_listener_ =
+      can_driver_->createMsgListener(can::CommInterface::FrameDelegate(this, &SocketCANGateway::msgCallback));
   state_listener_ =
       can_driver_->createStateListener(can::StateInterface::StateDelegate(this, &SocketCANGateway::stateCallback));
 
@@ -102,7 +105,7 @@ void SocketCANGateway::msgToCanFrame(const Message* msg, can::Frame* frame)
   frame->is_extended = true;
   frame->is_rtr = false;
   frame->is_error = false;
-  frame->id = msg->id ;
+  frame->id = msg->id;
   frame->dlc = msg->len;
 
   std::memcpy(&frame->data, msg->data, msg->len);

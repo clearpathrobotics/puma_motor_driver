@@ -284,7 +284,8 @@ void Driver::verifyParams()
       if (verifyRaw16x16(getRawP(), gain_p_))
       {
         state_ = ConfigurationState::IGain;
-        ROS_INFO("Puma %s (%i): P gain constant was set to %f and %f was requested.", device_name_.c_str(), device_number_, getP(), gain_p_);
+        ROS_INFO("Puma %s (%i): P gain constant was set to %f and %f was requested.",
+            device_name_.c_str(), device_number_, getP(), gain_p_);
       }
       else
       {
@@ -306,11 +307,13 @@ void Driver::verifyParams()
       if (verifyRaw16x16(getRawI(), gain_i_))
       {
         state_ = ConfigurationState::DGain;
-        ROS_INFO("Puma %s (%i): I gain constant was set to %f and %f was requested.", device_name_.c_str(), device_number_, getI(), gain_i_);
+        ROS_INFO("Puma %s (%i): I gain constant was set to %f and %f was requested.",
+            device_name_.c_str(), device_number_, getI(), gain_i_);
       }
       else
       {
-        ROS_WARN("Puma %s (%i): I gain constant was set to %f and %f was requested.", device_name_.c_str(), device_number_, getI(), gain_i_);
+        ROS_WARN("Puma %s (%i): I gain constant was set to %f and %f was requested.",
+           device_name_.c_str(), device_number_, getI(), gain_i_);
         switch (control_mode_)
         {
           case puma_motor_msgs::Status::MODE_CURRENT:
@@ -329,7 +332,8 @@ void Driver::verifyParams()
       if (verifyRaw16x16(getRawD(), gain_d_))
       {
         state_ = ConfigurationState::VerifiedParameters;
-        ROS_INFO("Puma %s (%i): D gain constant was set to %f and %f was requested.", device_name_.c_str(), device_number_, getD(), gain_d_);
+        ROS_INFO("Puma %s (%i): D gain constant was set to %f and %f was requested.",
+            device_name_.c_str(), device_number_, getD(), gain_d_);
       }
       else
       {
@@ -480,7 +484,8 @@ void Driver::setMode(const uint8_t mode, const double p, const double i, const d
   if (mode == puma_motor_msgs::Status::MODE_VOLTAGE)
   {
     control_mode_ = mode;
-    ROS_WARN("Puma %s (%i): mode set to voltage control but PID gains are not needed.", device_name_.c_str(), device_number_);
+    ROS_WARN("Puma %s (%i): mode set to voltage control but PID gains are not needed.",
+        device_name_.c_str(), device_number_);
     if (configured_)
     {
       resetConfiguration();
@@ -495,7 +500,7 @@ void Driver::setMode(const uint8_t mode, const double p, const double i, const d
     }
     setGains(p, i, d);
     ROS_INFO("Puma %s (%i): mode set to a closed-loop control with PID gains of P:%f, I:%f and D:%f.",
-      device_name_.c_str(), device_number_, gain_p_, gain_i_, gain_d_);
+        device_name_.c_str(), device_number_, gain_p_, gain_i_, gain_d_);
   }
 }
 
