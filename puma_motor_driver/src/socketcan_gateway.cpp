@@ -54,7 +54,7 @@ bool SocketCANGateway::connect()
       can_driver_->createStateListener(can::StateInterface::StateDelegate(this, &SocketCANGateway::stateCallback));
 
   std::cout << __PRETTY_FUNCTION__ << ": Trying to connect to " << canbus_dev_ << std::endl;
-  if (!can_driver_->init(canbus_dev_, false))
+  if (!can_driver_->init(canbus_dev_, false, can::NoSettings::create()))
   {
     this->stateCallback(can_driver_->getState());
     std::cerr << __PRETTY_FUNCTION__ << ": Failed to connect to " << canbus_dev_ << std::endl;
