@@ -207,14 +207,15 @@ void Driver::verifyParams()
   switch (state_)
   {
     case ConfigurationState::Initializing:
-      ROS_INFO("Puma %s (%i): starting to verify parameters.", device_name_.c_str(), device_number_);
+      ROS_INFO("Puma Motor Controller on %s (%i): starting to verify parameters.",
+          device_name_.c_str(), device_number_);
       state_ = ConfigurationState::PowerFlag;
       break;
     case ConfigurationState::PowerFlag:
       if (lastPower() == 0)
       {
         state_ = ConfigurationState::EncoderPosRef;
-        ROS_INFO("Puma %s (%i): cleared power flag.", device_name_.c_str(), device_number_);
+        ROS_INFO("Puma Motor Controller on %s (%i): cleared power flag.", device_name_.c_str(), device_number_);
       }
       else
       {
@@ -225,7 +226,8 @@ void Driver::verifyParams()
       if (posEncoderRef() == LM_REF_ENCODER)
       {
         state_ = ConfigurationState::EncoderSpdRef;
-        ROS_INFO("Puma %s (%i): set position encoder reference.", device_name_.c_str(), device_number_);
+        ROS_INFO("Puma Motor Controller on %s (%i): set position encoder reference.",
+            device_name_.c_str(), device_number_);
       }
       else
       {
@@ -236,7 +238,8 @@ void Driver::verifyParams()
       if (spdEncoderRef() == LM_REF_QUAD_ENCODER)
       {
         state_ = ConfigurationState::EncoderCounts;
-        ROS_INFO("Puma %s (%i): set speed encoder reference.", device_name_.c_str(), device_number_);
+        ROS_INFO("Puma Motor Controller on %s (%i): set speed encoder reference.",
+            device_name_.c_str(), device_number_);
       }
       else
       {
@@ -247,7 +250,8 @@ void Driver::verifyParams()
       if (encoderCounts() == encoder_cpr_)
       {
         state_ = ConfigurationState::ClosedLoop;
-        ROS_INFO("Puma %s (%i): set encoder counts to %i.", device_name_.c_str(), device_number_, encoder_cpr_);
+        ROS_INFO("Puma Motor Controller on %s (%i): set encoder counts to %i.",
+            device_name_.c_str(), device_number_, encoder_cpr_);
       }
       else
       {
@@ -258,7 +262,8 @@ void Driver::verifyParams()
       if (lastMode() == puma_motor_msgs::Status::MODE_SPEED)
       {
         state_ = ConfigurationState::ControlMode;
-        ROS_INFO("Puma %s (%i): entered a close-loop control mode.", device_name_.c_str(), device_number_);
+        ROS_INFO("Puma Motor Controller on %s (%i): entered a close-loop control mode.",
+            device_name_.c_str(), device_number_);
       }
       else
       {
@@ -271,12 +276,14 @@ void Driver::verifyParams()
         if (control_mode_ != puma_motor_msgs::Status::MODE_VOLTAGE)
         {
           state_ = ConfigurationState::PGain;
-          ROS_INFO("Puma %s (%i): was set to a close loop control mode.", device_name_.c_str(), device_number_);
+          ROS_INFO("Puma Motor Controller on %s (%i): was set to a close loop control mode.",
+              device_name_.c_str(), device_number_);
         }
         else
         {
           state_ = ConfigurationState::VerifiedParameters;
-          ROS_INFO("Puma %s (%i): was set to voltage control mode.", device_name_.c_str(), device_number_);
+          ROS_INFO("Puma Motor Controller on %s (%i): was set to voltage control mode.",
+              device_name_.c_str(), device_number_);
         }
       }
       break;
@@ -284,7 +291,7 @@ void Driver::verifyParams()
       if (verifyRaw16x16(getRawP(), gain_p_))
       {
         state_ = ConfigurationState::IGain;
-        ROS_INFO("Puma %s (%i): P gain constant was set to %f and %f was requested.",
+        ROS_INFO("Puma Motor Controller on %s (%i): P gain constant was set to %f and %f was requested.",
             device_name_.c_str(), device_number_, getP(), gain_p_);
       }
       else
@@ -307,12 +314,12 @@ void Driver::verifyParams()
       if (verifyRaw16x16(getRawI(), gain_i_))
       {
         state_ = ConfigurationState::DGain;
-        ROS_INFO("Puma %s (%i): I gain constant was set to %f and %f was requested.",
+        ROS_INFO("Puma Motor Controller on %s (%i): I gain constant was set to %f and %f was requested.",
             device_name_.c_str(), device_number_, getI(), gain_i_);
       }
       else
       {
-        ROS_WARN("Puma %s (%i): I gain constant was set to %f and %f was requested.",
+        ROS_WARN("Puma Motor Controller on %s (%i): I gain constant was set to %f and %f was requested.",
            device_name_.c_str(), device_number_, getI(), gain_i_);
         switch (control_mode_)
         {
@@ -332,7 +339,7 @@ void Driver::verifyParams()
       if (verifyRaw16x16(getRawD(), gain_d_))
       {
         state_ = ConfigurationState::VerifiedParameters;
-        ROS_INFO("Puma %s (%i): D gain constant was set to %f and %f was requested.",
+        ROS_INFO("Puma Motor Controller on %s (%i): D gain constant was set to %f and %f was requested.",
             device_name_.c_str(), device_number_, getD(), gain_d_);
       }
       else
@@ -354,7 +361,7 @@ void Driver::verifyParams()
   }
   if (state_ == ConfigurationState::VerifiedParameters)
   {
-    ROS_INFO("Puma %s (%i): all parameters verified.", device_name_.c_str(), device_number_);
+    ROS_INFO("Puma Motor Controller on %s (%i): all parameters verified.", device_name_.c_str(), device_number_);
     configured_ = true;
     state_ = ConfigurationState::Configured;
   }
@@ -467,7 +474,7 @@ void Driver::setMode(const uint8_t mode)
   if (mode == puma_motor_msgs::Status::MODE_VOLTAGE)
   {
     control_mode_ = mode;
-    ROS_INFO("Puma %s (%i): mode set to voltage control.", device_name_.c_str(), device_number_);
+    ROS_INFO("Puma Motor Controller on %s (%i): mode set to voltage control.", device_name_.c_str(), device_number_);
     if (configured_)
     {
       resetConfiguration();
@@ -475,7 +482,8 @@ void Driver::setMode(const uint8_t mode)
   }
   else
   {
-    ROS_ERROR("Puma %s (%i): Close loop modes need PID gains.", device_name_.c_str(), device_number_);
+    ROS_ERROR("Puma Motor Controller on %s (%i): Close loop modes need PID gains.",
+        device_name_.c_str(), device_number_);
   }
 }
 
@@ -484,7 +492,7 @@ void Driver::setMode(const uint8_t mode, const double p, const double i, const d
   if (mode == puma_motor_msgs::Status::MODE_VOLTAGE)
   {
     control_mode_ = mode;
-    ROS_WARN("Puma %s (%i): mode set to voltage control but PID gains are not needed.",
+    ROS_WARN("Puma Motor Controller on %s (%i): mode set to voltage control but PID gains are not needed.",
         device_name_.c_str(), device_number_);
     if (configured_)
     {
@@ -499,7 +507,8 @@ void Driver::setMode(const uint8_t mode, const double p, const double i, const d
       resetConfiguration();
     }
     setGains(p, i, d);
-    ROS_INFO("Puma %s (%i): mode set to a closed-loop control with PID gains of P:%f, I:%f and D:%f.",
+    ROS_INFO(
+        "Puma Motor Controller on %s (%i): mode set to a closed-loop control with PID gains of P:%f, I:%f and D:%f.",
         device_name_.c_str(), device_number_, gain_p_, gain_i_, gain_d_);
   }
 }

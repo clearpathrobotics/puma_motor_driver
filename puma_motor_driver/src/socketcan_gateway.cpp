@@ -22,12 +22,11 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCL
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <iostream>
+#include <socketcan_interface/make_shared.h>
 #include <string>
 
-#include <socketcan_interface/make_shared.h>
-
 #include "puma_motor_driver/socketcan_gateway.h"
-#include "ros/ros.h"
 
 namespace puma_motor_driver
 {
@@ -121,8 +120,9 @@ void SocketCANGateway::stateCallback(const can::State& state)
 {
   std::string error;
   can_driver_->translateError(state.internal_error, error);
-  std::cerr << __PRETTY_FUNCTION__ << ": State: " << state.driver_state << ", internal_error: " << state.internal_error
-            << " error: " << error << ", error_code:" << state.error_code << std::endl;
+  std::cerr << __PRETTY_FUNCTION__ << " [CAN device: " << canbus_dev_ << "] State: " << state.driver_state <<
+      ", internal_error: " << state.internal_error << " error: " << error << ", error_code:" << state.error_code
+      << std::endl;
 }
 
 void SocketCANGateway::sendFrame(const Message& msg)
@@ -136,7 +136,8 @@ void SocketCANGateway::sendFrame(const Message& msg)
 
   if (!frame.isValid())
   {
-    std::cerr << __PRETTY_FUNCTION__ << ": CAN frame is not valid, not sending." << std::endl;
+    std::cerr << __PRETTY_FUNCTION__ <<  " [CAN device: " << canbus_dev_  << "] CAN frame is not valid, not sending."
+        << std::endl;
     return;
   }
   can_driver_->send(frame);
