@@ -46,7 +46,7 @@ public:
   void publishStatus();
   void feedbackTimerCb(const ros::TimerEvent&);
   void statusTimerCb(const ros::TimerEvent&);
-  void activePublishers(bool activate);
+  void activePublishers(const bool activate);
 
 private:
   ros::NodeHandle nh_;

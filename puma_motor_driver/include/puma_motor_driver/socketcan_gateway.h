@@ -25,20 +25,15 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 #ifndef PUMA_MOTOR_DRIVER_SOCKETCAN_GATEWAY_H
 #define PUMA_MOTOR_DRIVER_SOCKETCAN_GATEWAY_H
 
-
+#include <mutex>  // NOLINT(build/c++11)
 #include <string>
 #include <stdio.h>
+#include <queue>
+#include <thread>  // NOLINT(build/c++11)
 #include <unistd.h>
-#include <fcntl.h>
-#include <poll.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <sys/select.h>
-#include <net/if.h>
 
-#include <linux/can.h>
-#include <linux/can/raw.h>
+#include <socketcan_interface/socketcan.h>
+#include <socketcan_interface/threading.h>
 
 #include "puma_motor_driver/gateway.h"
 #include "puma_motor_driver/message.h"
@@ -49,23 +44,34 @@ namespace puma_motor_driver
 class SocketCANGateway : public Gateway
 {
 public:
-  explicit SocketCANGateway(std::string canbus_dev);
+  explicit SocketCANGateway(const std::string& canbus_dev);
+  ~SocketCANGateway();
 
-  virtual bool connect();
-  virtual bool isConnected();
+  bool connect() override;
+  bool isConnected() const override;
 
-  virtual bool recv(Message* msg);
-  virtual void queue(const Message& msg);
-  virtual bool sendAllQueued();
-  void msgToFrame(Message* msg, can_frame* frame);
+  void process();
+  bool recv(Message* msg) override;
+  void queue(const Message& msg) override;
+
+  void canFrameToMsg(const can::Frame* frame, Message* msg);
+  void msgToCanFrame(const Message* msg, can::Frame* frame);
 
 private:
-  int socket_;
-  std::string canbus_dev_;  // CAN interface ID
+  std::string canbus_dev_;  // CANBUS interface
   bool is_connected_;
 
-  can_frame write_frames_[1024];
-  int write_frames_index_;
+  std::thread can_msg_process_thread_;
+  std::queue<can::Frame> can_receive_queue_, can_send_queue_;
+  std::mutex receive_queue_mutex_, send_queue_mutex_;
+
+  can::ThreadedSocketCANInterfaceSharedPtr can_driver_;
+  can::FrameListenerConstSharedPtr msg_listener_;
+  can::StateListenerConstSharedPtr state_listener_;
+
+  void msgCallback(const can::Frame& msg);
+  void stateCallback(const can::State& state);
+  void sendFrame(const Message& msg);
 };
 
 }  // namespace puma_motor_driver

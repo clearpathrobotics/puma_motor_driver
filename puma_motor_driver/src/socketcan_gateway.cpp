@@ -22,145 +22,137 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCL
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <iostream>
+#include <socketcan_interface/make_shared.h>
 #include <string>
-#include <stdio.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <poll.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <net/if.h>
-
-#include <linux/can.h>
-#include <linux/can/raw.h>
 
 #include "puma_motor_driver/socketcan_gateway.h"
-#include "ros/ros.h"
 
 namespace puma_motor_driver
 {
 
-SocketCANGateway::SocketCANGateway(std::string canbus_dev):
+SocketCANGateway::SocketCANGateway(const std::string& canbus_dev):
   canbus_dev_(canbus_dev),
   is_connected_(false),
-  write_frames_index_(0)
+  can_driver_(ROSCANOPEN_MAKE_SHARED<can::ThreadedSocketCANInterface>())
 {
+}
+
+SocketCANGateway::~SocketCANGateway()
+{
+  can_driver_->shutdown();
+  can_driver_.reset();
+  is_connected_ = false;
 }
 
 bool SocketCANGateway::connect()
 {
-  if ((socket_ = socket(PF_CAN, SOCK_RAW, CAN_RAW)) < 0)
+  msg_listener_ =
+      can_driver_->createMsgListener(can::CommInterface::FrameDelegate(this, &SocketCANGateway::msgCallback));
+  state_listener_ =
+      can_driver_->createStateListener(can::StateInterface::StateDelegate(this, &SocketCANGateway::stateCallback));
+
+  std::cout << __PRETTY_FUNCTION__ << ": Trying to connect to " << canbus_dev_ << std::endl;
+  if (!can_driver_->init(canbus_dev_, false, can::NoSettings::create()))
   {
-    ROS_ERROR("Error while opening socket");
-    return false;
-  }
-
-  struct ifreq ifr;
-
-  snprintf (ifr.ifr_name, sizeof(canbus_dev_.c_str()), "%s", canbus_dev_.c_str());
-
-  if (ioctl(socket_, SIOCGIFINDEX, &ifr) < 0)
-  {
-    close(socket_);
-    ROS_ERROR("Error while trying to control device");
-    return false;
-  }
-
-  struct sockaddr_can addr;
-  addr.can_family  = AF_CAN;
-  addr.can_ifindex = ifr.ifr_ifindex;
-
-  ROS_DEBUG("%s at index %d", canbus_dev_.c_str(), ifr.ifr_ifindex);
-
-  if (bind(socket_, (struct sockaddr *)&addr, sizeof(addr)) < 0)
-  {
-    ROS_ERROR("Error in socket bind");
-    return false;
-  }
-
-  struct timeval tv;
-  tv.tv_sec = 0;
-  tv.tv_usec = 1;  // microseconds
-
-  setsockopt(socket_, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
-
-  ROS_INFO("Opened Socket CAN on %s", canbus_dev_.c_str());
-  is_connected_ = true;
-
-  return is_connected_;
-}
-
-
-bool SocketCANGateway::isConnected()
-{
-  return is_connected_;
-}
-
-
-bool SocketCANGateway::recv(Message* msg)
-{
-  can_frame read_frame;
-
-  int bytes = read(socket_, &read_frame, sizeof(struct can_frame));
-  if (bytes == sizeof(struct can_frame))
-  {
-    ROS_DEBUG("Recieved ID 0x%08x, data (%d)", (read_frame.can_id& CAN_EFF_MASK), read_frame.can_dlc);
-    msgToFrame(msg, &read_frame);
-    return true;
+    this->stateCallback(can_driver_->getState());
+    std::cerr << __PRETTY_FUNCTION__ << ": Failed to connect to " << canbus_dev_ << std::endl;
   }
   else
   {
-    if (bytes < 0)
-    {
-      if (errno == EAGAIN)
-      {
-        ROS_DEBUG("No more frames");
-      }
-      else
-      {
-        ROS_ERROR("Error reading from socketcan: %d", errno);
-      }
-    }
-    else
-    {
-      ROS_ERROR("Socketcan read() returned unexpected size.");
-    }
+    std::cout << __PRETTY_FUNCTION__ << ": Connected to " << canbus_dev_ << std::endl;
+    is_connected_ = true;
+  }
+  can_msg_process_thread_ = std::thread([=] { this->process(); });  // NOLINT
+  return is_connected_;
+}
+
+bool SocketCANGateway::isConnected() const
+{
+  return is_connected_;
+}
+
+bool SocketCANGateway::recv(Message* msg)
+{
+  std::lock_guard<std::mutex> lock(receive_queue_mutex_);
+  if (can_receive_queue_.empty())
+  {
     return false;
   }
+  this->canFrameToMsg(&can_receive_queue_.front(), msg);
+  can_receive_queue_.pop();
+  return true;
 }
 
 void SocketCANGateway::queue(const Message& msg)
 {
-  ROS_DEBUG("Queuing ID 0x%08x, data (%d)", msg.id, msg.len);
-  write_frames_[write_frames_index_].can_id = msg.id | CAN_EFF_FLAG;
-  write_frames_[write_frames_index_].can_dlc = msg.len;
-
-  for (int i = 0; i < msg.len; i++)
-  {
-    write_frames_[write_frames_index_].data[i] = msg.data[i];
-  }
-  write_frames_index_++;
+  can::Frame frame;
+  this->msgToCanFrame(&msg, &frame);
+  std::lock_guard<std::mutex> lock(send_queue_mutex_);
+  can_send_queue_.push(frame);
 }
 
-bool SocketCANGateway::sendAllQueued()
+void SocketCANGateway::canFrameToMsg(const can::Frame* frame, Message* msg)
 {
-  for (int i = 0; i < write_frames_index_; i++)
-  {
-    ROS_DEBUG("Writing ID 0x%08x, data (%d)", write_frames_[i].can_id, write_frames_[i].can_dlc);
-    int bytes = write(socket_, &write_frames_[i], sizeof(struct can_frame));
-  }
-  write_frames_index_ = 0;
-  return true;
+  msg->id = frame->id & CAN_EFF_MASK;
+  msg->len = frame->dlc;
+  std::memcpy(msg->data, &frame->data, frame->dlc);
 }
 
-void SocketCANGateway::msgToFrame(Message* msg, can_frame* frame)
+void SocketCANGateway::msgToCanFrame(const Message* msg, can::Frame* frame)
 {
-  msg->id = frame->can_id & CAN_EFF_MASK;
-  msg->len = frame->can_dlc;
-  for (int i = 0; i < msg->len; i++)
+  frame->is_extended = true;
+  frame->is_rtr = false;
+  frame->is_error = false;
+  frame->id = msg->id;
+  frame->dlc = msg->len;
+
+  std::memcpy(&frame->data, msg->data, msg->len);
+}
+
+void SocketCANGateway::msgCallback(const can::Frame& msg)
+{
+  std::lock_guard<std::mutex> lock(receive_queue_mutex_);
+  can_receive_queue_.push(msg);
+}
+
+void SocketCANGateway::stateCallback(const can::State& state)
+{
+  std::string error;
+  can_driver_->translateError(state.internal_error, error);
+  std::cerr << __PRETTY_FUNCTION__ << " [CAN device: " << canbus_dev_ << "] State: " << state.driver_state <<
+      ", internal_error: " << state.internal_error << " error: " << error << ", error_code:" << state.error_code
+      << std::endl;
+}
+
+void SocketCANGateway::sendFrame(const Message& msg)
+{
+  can::Frame frame;
+  frame.is_extended = true;
+  frame.is_rtr = false;
+  frame.is_error = false;
+  frame.id = msg.id;
+  frame.dlc = msg.len;
+
+  if (!frame.isValid())
   {
-    msg->data[i] = frame->data[i];
+    std::cerr << __PRETTY_FUNCTION__ <<  " [CAN device: " << canbus_dev_  << "] CAN frame is not valid, not sending."
+        << std::endl;
+    return;
+  }
+  can_driver_->send(frame);
+}
+
+void SocketCANGateway::process()
+{
+  while (is_connected_)
+  {
+    std::lock_guard<std::mutex> lock(send_queue_mutex_);
+    if (!can_send_queue_.empty())
+    {
+      can_driver_->send(can_send_queue_.front());
+      can_send_queue_.pop();
+    }
   }
 }
 

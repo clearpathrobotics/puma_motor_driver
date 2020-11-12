@@ -25,15 +25,12 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 #include <string>
 #include <vector>
 
-#include "boost/foreach.hpp"
-#include "boost/scoped_ptr.hpp"
-#include "boost/shared_ptr.hpp"
 #include "serial/serial.h"
 
 #include "ros/ros.h"
 #include "sensor_msgs/JointState.h"
 #include "puma_motor_driver/driver.h"
-#include "puma_motor_driver/serial_gateway.h"
+// #include "puma_motor_driver/serial_gateway.h"
 #include "puma_motor_driver/socketcan_gateway.h"
 #include "puma_motor_driver/multi_driver_node.h"
 #include "puma_motor_driver/diagnostic_updater.h"
@@ -67,9 +64,9 @@ public:
     nh_private_.param<int>("frequency", freq_, 25);
 
 
-    BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
+    for (auto& driver : drivers_)
     {
-      driver.clearStatusCache();
+      driver.clearMsgCache();
       driver.setEncoderCPR(encoder_cpr_);
       driver.setGearRatio(gear_ratio_);
       driver.setMode(desired_mode_, 0.1, 0.01, 0.0);
@@ -78,12 +75,11 @@ public:
     multi_driver_node_.reset(new puma_motor_driver::MultiDriverNode(nh_, drivers_));
   }
 
-
   void cmdCallback(const sensor_msgs::JointStateConstPtr& cmd_msg)
   {
     if (active_)
     {
-      BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
+      for (auto& driver : drivers_)
       {
         for (int i = 0; i < cmd_msg->name.size(); i++)
         {
@@ -103,6 +99,17 @@ public:
     }
   }
 
+  bool areAllActive()
+  {
+    for (auto& driver : drivers_)
+    {
+      if (!driver.isConfigured())
+      {
+        return false;
+      }
+    }
+    return true;
+  }
 
   bool connectIfNotConnected()
   {
@@ -136,21 +143,21 @@ public:
       if (active_)
       {
         // Checks to see if power flag has been reset for each driver
-        BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
+        for (auto& driver : drivers_)
         {
           if (driver.lastPower() != 0)
           {
             active_ = false;
             multi_driver_node_->activePublishers(active_);
             ROS_WARN("Power reset detected on device ID %d, will reconfigure all drivers.", driver.deviceNumber());
-            BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
+            for (auto& driver : drivers_)
             {
               driver.resetConfiguration();
             }
           }
         }
         // Queue data requests for the drivers in order to assemble an amalgamated status message.
-        BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
+        for (auto& driver : drivers_)
         {
           driver.requestStatusMessages();
           driver.requestFeedbackSetpoint();
@@ -159,23 +166,20 @@ public:
       else
       {
         // Set parameters for each driver.
-        BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
+        for (auto& driver : drivers_)
         {
           driver.configureParams();
         }
       }
-      gateway_.sendAllQueued();
       // Process ROS callbacks, which will queue command messages to the drivers.
       ros::spinOnce();
-      gateway_.sendAllQueued();
       // ros::Duration(0.005).sleep();
-
 
       // Process all received messages through the connected driver instances.
       puma_motor_driver::Message recv_msg;
       while (gateway_.recv(&recv_msg))
       {
-        BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
+        for (auto& driver : drivers_)
         {
           driver.processMessage(recv_msg);
         }
@@ -184,18 +188,14 @@ public:
       // Check parameters of each driver instance.
       if (!active_)
       {
-        BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
+        for (auto& driver : drivers_)
         {
           driver.verifyParams();
         }
       }
 
       // Verify that the all drivers are configured.
-      if ( drivers_[0].isConfigured() == true
-        && drivers_[1].isConfigured() == true
-        && drivers_[2].isConfigured() == true
-        && drivers_[3].isConfigured() == true
-        && active_ == false)
+      if (areAllActive() == true && active_ == false)
       {
         active_ = true;
         multi_driver_node_->activePublishers(active_);
@@ -222,35 +222,34 @@ private:
   bool active_;
 
   ros::Subscriber cmd_sub_;
-  boost::shared_ptr<puma_motor_driver::MultiDriverNode> multi_driver_node_;
+  std::shared_ptr<puma_motor_driver::MultiDriverNode> multi_driver_node_;
 };
 
 
 int main(int argc, char *argv[])
 {
   ros::init(argc, argv, "puma_multi_controller_node");
-  ros::NodeHandle nh;
-  ros::NodeHandle nh_private("~");
+  ros::NodeHandle nh, nh_private("~");
 
-  std::string serial_port;
+  // std::string serial_port;
   std::string canbus_dev;
 
-  boost::scoped_ptr<puma_motor_driver::Gateway> gateway;
+  std::unique_ptr<puma_motor_driver::Gateway> gateway;
 
   if (nh_private.getParam("canbus_dev", canbus_dev))
   {
     gateway.reset(new puma_motor_driver::SocketCANGateway(canbus_dev));
   }
-  else if (nh_private.getParam("serial_port", serial_port))
-  {
-    serial::Serial serial;
-    serial.setPort(serial_port);
-    gateway.reset(new puma_motor_driver::SerialGateway(serial));
-  }
+  // else if (nh_private.getParam("serial_port", serial_port))
+  // {
+  //   serial::Serial serial;
+  //   serial.setPort(serial_port);
+  //   gateway.reset(new puma_motor_driver::SerialGateway(serial));
+  // }
   else
   {
     ROS_FATAL("No communication method given.");
-    return 1;
+    return -1;
   }
 
   puma_motor_driver::PumaMotorDriverDiagnosticUpdater puma_motor_driver_diagnostic_updater;

@@ -27,7 +27,6 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 #include "puma_motor_msgs/Status.h"
 #include "puma_motor_msgs/MultiFeedback.h"
 #include "puma_motor_msgs/Feedback.h"
-#include "boost/foreach.hpp"
 #include <cstring>
 #include <vector>
 #include <ros/ros.h>
@@ -52,7 +51,7 @@ void MultiDriverNode::publishFeedback()
 {
   // Prepare output feedback message to ROS.
   uint8_t feedback_index = 0;
-  BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
+  for (auto& driver : drivers_)
   {
     puma_motor_msgs::Feedback* f = &feedback_msg_.drivers_feedback[feedback_index];
     f->device_number = driver.deviceNumber();
@@ -73,7 +72,7 @@ void MultiDriverNode::publishStatus()
 {
   // Prepare output status message to ROS.
   uint8_t status_index = 0;
-  BOOST_FOREACH(puma_motor_driver::Driver& driver, drivers_)
+  for (auto& driver : drivers_)
   {
     puma_motor_msgs::Status* s = &status_msg_.drivers[status_index];
     s->device_number = driver.deviceNumber();
@@ -95,7 +94,7 @@ void MultiDriverNode::statusTimerCb(const ros::TimerEvent&)
 {
   if (active_)
   {
-    publishStatus();
+    this->publishStatus();
   }
 }
 
@@ -103,11 +102,11 @@ void MultiDriverNode::feedbackTimerCb(const ros::TimerEvent&)
 {
   if (active_)
   {
-    publishFeedback();
+    this->publishFeedback();
   }
 }
 
-void MultiDriverNode::activePublishers(bool activate)
+void MultiDriverNode::activePublishers(const bool activate)
 {
   active_ = activate;
 }
