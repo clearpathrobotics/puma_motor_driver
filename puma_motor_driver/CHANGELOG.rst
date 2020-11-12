@@ -2,8 +2,8 @@
 Changelog for package puma_motor_driver
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.3.0 (2020-11-12)
+------------------
 * [puma_motor_driver] Improved logging.
 * [puma_motor_driver] Added settings for socketcan interface.
 * [puma_motor_driver] Fixes for roslint.
