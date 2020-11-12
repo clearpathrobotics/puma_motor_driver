@@ -2,6 +2,16 @@
 Changelog for package puma_motor_driver
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* [puma_motor_driver] Improved logging.
+* [puma_motor_driver] Added settings for socketcan interface.
+* [puma_motor_driver] Fixes for roslint.
+* [puma_motor_driver] Switched to socketcan_interface, updated configuration and added extra field handling.
+* [puma_motor_driver] Removed serial gateway.
+* [puma_motor_driver] Update for cpp11.
+* Contributors: Tony Baltovski
+
 0.2.1 (2019-11-22)
 ------------------
 * [puma_motor_driver] Disabld checking of message if it was a status cause it was causing issues.
