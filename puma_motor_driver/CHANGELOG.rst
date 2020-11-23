@@ -2,6 +2,11 @@
 Changelog for package puma_motor_driver
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* [puma_motor_driver] Made socketcan_interface a depend rather than build_depend.
+* Contributors: Tony Baltovski
+
 0.3.0 (2020-11-12)
 ------------------
 * [puma_motor_driver] Improved logging.
