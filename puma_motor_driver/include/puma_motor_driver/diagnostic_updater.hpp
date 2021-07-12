@@ -1,7 +1,7 @@
 /**
 Software License Agreement (BSD)
 
-\authors   Mike Purvis <mpurvis@clearpathrobotics.com>
+\authors   Tony Baltovski <tbaltovski@clearpathrobotics.com>
 \copyright Copyright (c) 2015, Clearpath Robotics, Inc., All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that
@@ -21,40 +21,39 @@ OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTE
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef PUMA_MOTOR_DRIVER_GATEWAY_H
-#define PUMA_MOTOR_DRIVER_GATEWAY_H
+#ifndef PUMA_MOTOR_DRIVER_DIAGNOSTIC_UPDATER_H
+#define PUMA_MOTOR_DRIVER_DIAGNOSTIC_UPDATER_H
 
-#include "puma_motor_driver/can_proto.h"
-#include "puma_motor_driver/message.h"
+#include <string>
 
-#include <stdint.h>
-
+#include "rclcpp/rclcpp.hpp"
+#include "std_msgs/msg/bool.hpp"
+#include "diagnostic_updater/diagnostic_updater.hpp"
+#include "diagnostic_updater/publisher.hpp"
+#include "puma_motor_msgs/msg/multi_status.hpp"
+#include "puma_motor_msgs/msg/status.hpp"
 
 namespace puma_motor_driver
 {
 
-class Gateway
+class PumaMotorDriverDiagnosticUpdater : public rclcpp::Node, private diagnostic_updater::Updater
 {
 public:
-  virtual bool connect() = 0;
-  virtual bool isConnected() const = 0;
+  PumaMotorDriverDiagnosticUpdater(const std::string node_name);
 
-  // virtual void run() = 0;
+  void driverDiagnostics(diagnostic_updater::DiagnosticStatusWrapper& stat, int driver);
 
-  /**
-   * Queue specified message to be sent on the bus.
-   */
-  virtual void queue(const Message& msg) = 0;
+  void statusCallback(const puma_motor_msgs::msg::MultiStatus::SharedPtr status_msg);
 
-  /**
-   * Receive the next available message from the bus, blocking for
-   * timeout_millis if nonzero.
-   *
-   * \return True if a message was returned false if timeout occurred.
-   */
-  virtual bool recv(Message* msg) = 0;
+private:
+  rclcpp::Subscription<puma_motor_msgs::msg::MultiStatus>::SharedPtr status_sub_;
+  puma_motor_msgs::msg::MultiStatus::SharedPtr last_status_;
+  bool initialized_;
+
+  static const char* getFaultString(uint8_t fault);
+  static const char* getModeString(uint8_t mode);
 };
 
 }  // namespace puma_motor_driver
 
-#endif  // PUMA_MOTOR_DRIVER_GATEWAY_H
+#endif  // PUMA_MOTOR_DRIVER_DIAGNOSTIC_UPDATER_H

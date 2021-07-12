@@ -21,30 +21,35 @@ OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTE
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#include "puma_motor_driver/multi_driver_node.h"
-#include "puma_motor_driver/driver.h"
-#include "puma_motor_msgs/MultiStatus.h"
-#include "puma_motor_msgs/Status.h"
-#include "puma_motor_msgs/MultiFeedback.h"
-#include "puma_motor_msgs/Feedback.h"
 #include <cstring>
 #include <vector>
-#include <ros/ros.h>
+#include <chrono>
+
+#include "puma_motor_driver/multi_driver_node.hpp"
+#include "puma_motor_driver/driver.hpp"
+#include "puma_motor_msgs/msg/multi_status.hpp"
+#include "puma_motor_msgs/msg/status.hpp"
+#include "puma_motor_msgs/msg/multi_feedback.hpp"
+#include "puma_motor_msgs/msg/feedback.hpp"
+
+#include "rclcpp/rclcpp.hpp"
 
 namespace puma_motor_driver
 {
 
-MultiDriverNode::MultiDriverNode(ros::NodeHandle& nh, std::vector<puma_motor_driver::Driver>& drivers)
-  : nh_(nh), drivers_(drivers), active_(false)
+MultiDriverNode::MultiDriverNode(const std::string node_name, std::vector<puma_motor_driver::Driver>& drivers)
+  : Node(node_name), drivers_(drivers), active_(false)
   {
-    feedback_pub_ = nh_.advertise<puma_motor_msgs::MultiFeedback>("feedback", 5);
-    status_pub_ = nh_.advertise<puma_motor_msgs::MultiStatus>("status", 5);
+		feedback_pub_ = this->create_publisher<puma_motor_msgs::msg::MultiFeedback>("feedback", 5);
+    status_pub_ = this->create_publisher<puma_motor_msgs::msg::MultiStatus>("status", 5);
 
     feedback_msg_.drivers_feedback.resize(drivers_.size());
     status_msg_.drivers.resize(drivers_.size());
 
-    feedback_pub_timer_ = nh_.createTimer(ros::Duration(1.0/25), &MultiDriverNode::feedbackTimerCb, this);
-    status_pub_timer_ = nh_.createTimer(ros::Duration(1.0/1), &MultiDriverNode::statusTimerCb, this);
+    feedback_pub_timer_ = this->create_wall_timer(
+      std::chrono::milliseconds(40), std::bind(&MultiDriverNode::feedbackTimerCb, this));
+    status_pub_timer_ = this->create_wall_timer(
+      std::chrono::seconds(1), std::bind(&MultiDriverNode::statusTimerCb, this));
   }
 
 void MultiDriverNode::publishFeedback()
@@ -53,7 +58,7 @@ void MultiDriverNode::publishFeedback()
   uint8_t feedback_index = 0;
   for (auto& driver : drivers_)
   {
-    puma_motor_msgs::Feedback* f = &feedback_msg_.drivers_feedback[feedback_index];
+    puma_motor_msgs::msg::Feedback* f = &feedback_msg_.drivers_feedback[feedback_index];
     f->device_number = driver.deviceNumber();
     f->device_name = driver.deviceName();
     f->duty_cycle = driver.lastDutyCycle();
@@ -64,8 +69,8 @@ void MultiDriverNode::publishFeedback()
 
     feedback_index++;
   }
-  feedback_msg_.header.stamp = ros::Time::now();
-  feedback_pub_.publish(feedback_msg_);
+  feedback_msg_.header.stamp = this->get_clock()->now();
+  feedback_pub_->publish(feedback_msg_);
 }
 
 void MultiDriverNode::publishStatus()
@@ -74,7 +79,7 @@ void MultiDriverNode::publishStatus()
   uint8_t status_index = 0;
   for (auto& driver : drivers_)
   {
-    puma_motor_msgs::Status* s = &status_msg_.drivers[status_index];
+    puma_motor_msgs::msg::Status* s = &status_msg_.drivers[status_index];
     s->device_number = driver.deviceNumber();
     s->device_name = driver.deviceName();
     s->bus_voltage = driver.lastBusVoltage();
@@ -86,11 +91,11 @@ void MultiDriverNode::publishStatus()
 
     status_index++;
   }
-  status_msg_.header.stamp = ros::Time::now();
-  status_pub_.publish(status_msg_);
+  status_msg_.header.stamp = this->get_clock()->now();
+  status_pub_->publish(status_msg_);
 }
 
-void MultiDriverNode::statusTimerCb(const ros::TimerEvent&)
+void MultiDriverNode::statusTimerCb()
 {
   if (active_)
   {
@@ -98,7 +103,7 @@ void MultiDriverNode::statusTimerCb(const ros::TimerEvent&)
   }
 }
 
-void MultiDriverNode::feedbackTimerCb(const ros::TimerEvent&)
+void MultiDriverNode::feedbackTimerCb()
 {
   if (active_)
   {

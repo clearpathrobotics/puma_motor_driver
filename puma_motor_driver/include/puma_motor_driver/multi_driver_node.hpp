@@ -21,40 +21,49 @@ OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTE
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef PUMA_MOTOR_DRIVER_DIAGNOSTIC_UPDATER_H
-#define PUMA_MOTOR_DRIVER_DIAGNOSTIC_UPDATER_H
+#ifndef PUMA_MOTOR_DRIVER_MULTI_DRIVER_NODE_H
+#define PUMA_MOTOR_DRIVER_MULTI_DRIVER_NODE_H
 
+#include <stdint.h>
 #include <string>
+#include <vector>
 
-#include "ros/ros.h"
-#include "std_msgs/Bool.h"
-#include "diagnostic_updater/diagnostic_updater.h"
-#include "diagnostic_updater/publisher.h"
-#include "puma_motor_msgs/MultiStatus.h"
-#include "puma_motor_msgs/Status.h"
+#include "rclcpp/rclcpp.hpp"
+
+#include "puma_motor_driver/driver.hpp"
+#include "puma_motor_msgs/msg/multi_status.hpp"
+#include "puma_motor_msgs/msg/status.hpp"
+#include "puma_motor_msgs/msg/multi_feedback.hpp"
+#include "puma_motor_msgs/msg/feedback.hpp"
 
 namespace puma_motor_driver
 {
-
-class PumaMotorDriverDiagnosticUpdater : private diagnostic_updater::Updater
+class MultiDriverNode : public rclcpp::Node
 {
 public:
-  PumaMotorDriverDiagnosticUpdater();
+  MultiDriverNode(const std::string node_name, std::vector<puma_motor_driver::Driver>& drivers);
 
-  void driverDiagnostics(diagnostic_updater::DiagnosticStatusWrapper& stat, int driver);
-
-  void statusCallback(const puma_motor_msgs::MultiStatus::ConstPtr& status_msg);
+  void publishFeedback();
+  void publishStatus();
+  void feedbackTimerCb();
+  void statusTimerCb();
+  void activePublishers(const bool activate);
 
 private:
-  ros::NodeHandle nh_;
-  ros::Subscriber status_sub_;
-  puma_motor_msgs::MultiStatus::ConstPtr last_status_;
-  bool initialized_;
+  std::vector<puma_motor_driver::Driver>& drivers_;
 
-  static const char* getFaultString(uint8_t fault);
-  static const char* getModeString(uint8_t mode);
+  puma_motor_msgs::msg::MultiStatus status_msg_;
+  puma_motor_msgs::msg::MultiFeedback feedback_msg_;
+
+	rclcpp::Publisher<puma_motor_msgs::msg::MultiStatus>::SharedPtr status_pub_;
+	rclcpp::Publisher<puma_motor_msgs::msg::MultiFeedback>::SharedPtr feedback_pub_;
+
+  rclcpp::TimerBase::SharedPtr status_pub_timer_;
+  rclcpp::TimerBase::SharedPtr feedback_pub_timer_;
+
+  bool active_;
 };
 
 }  // namespace puma_motor_driver
 
-#endif  // PUMA_MOTOR_DRIVER_DIAGNOSTIC_UPDATER_H
+#endif  // PUMA_MOTOR_DRIVER_MULTI_DRIVER_NODE_H

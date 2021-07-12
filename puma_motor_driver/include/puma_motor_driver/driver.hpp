@@ -27,19 +27,18 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 #include <stdint.h>
 #include <string>
 
-#include "puma_motor_driver/can_proto.h"
-#include "puma_motor_msgs/Status.h"
+#include "puma_motor_driver/gateway.hpp"
+#include "puma_motor_driver/message.hpp"
+#include "puma_motor_driver/can_proto.hpp"
+#include "puma_motor_msgs/msg/status.hpp"
 
 namespace puma_motor_driver
 {
 
-class Gateway;
-class Message;
-
 class Driver
 {
 public:
-  Driver(Gateway& gateway, const uint8_t& device_number, const std::string& device_name);
+  Driver(std::shared_ptr<puma_motor_driver::Gateway> gateway, const uint8_t& device_number, const std::string& device_name);
 
   void processMessage(const Message& received_msg);
 
@@ -359,7 +358,7 @@ public:
 
 
 private:
-  Gateway& gateway_;
+  std::shared_ptr<puma_motor_driver::Gateway> gateway_;
   uint8_t device_number_;
   std::string device_name_;
 
