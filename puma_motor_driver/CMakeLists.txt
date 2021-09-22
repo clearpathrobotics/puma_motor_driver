@@ -30,6 +30,8 @@ include_directories(
   include
 )
 
+ament_export_include_directories(include)
+
 set(DEPENDENCIES
 	ament_cmake
 	diagnostic_updater
@@ -58,17 +60,21 @@ target_link_libraries(puma_multi_controller_node puma_motor_driver)
 # Install
 ################################################################################
 install(TARGETS puma_motor_driver puma_multi_controller_node
-  EXPORT export_${PROJECT_NAME}
-  DESTINATION lib/${PROJECT_NAME})
+	ARCHIVE DESTINATION lib
+	LIBRARY DESTINATION lib
+	RUNTIME DESTINATION bin
+)
 
 install(
   DIRECTORY launch
   DESTINATION share/${PROJECT_NAME}
 )
 
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION include/${PROJECT_NAME})
+
 ################################################################################
 # Macro for ament package
 ################################################################################
-ament_export_libraries(puma_motor_driver)
 ament_package()
 

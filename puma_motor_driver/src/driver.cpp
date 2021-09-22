@@ -56,7 +56,7 @@ namespace ConfigurationStates
 }  // namespace ConfigurationStates
 typedef ConfigurationStates::ConfigurationState ConfigurationState;
 
-Driver::Driver(std::shared_ptr<puma_motor_driver::Gateway> gateway, const uint8_t& device_number, const std::string& device_name)
+Driver::Driver(const std::shared_ptr<puma_motor_driver::Gateway> gateway, const uint8_t& device_number, const std::string& device_name)
   : gateway_(gateway), device_number_(device_number), device_name_(device_name),
     configured_(false), state_(ConfigurationState::Initializing), control_mode_(puma_motor_msgs::msg::Status::MODE_SPEED),
     gain_p_(1), gain_i_(0), gain_d_(0), encoder_cpr_(1), gear_ratio_(1)

@@ -38,7 +38,7 @@ namespace puma_motor_driver
 class Driver
 {
 public:
-  Driver(std::shared_ptr<puma_motor_driver::Gateway> gateway, const uint8_t& device_number, const std::string& device_name);
+  Driver(const std::shared_ptr<puma_motor_driver::Gateway> gateway, const uint8_t& device_number, const std::string& device_name);
 
   void processMessage(const Message& received_msg);
 
