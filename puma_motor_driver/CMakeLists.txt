@@ -8,7 +8,7 @@ if (NOT CMAKE_CXX_STANDARD)
     set(CMAKE_CXX_STANDARD 14)
 endif ()
 if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    add_compile_options(-Wall -Wextra -Wpedantic)
+    add_compile_options(-Wall -Wextra -Wpedantic -fPIC)
 endif ()
 
 ################################################################################
@@ -51,6 +51,7 @@ add_library(puma_motor_driver
   src/diagnostic_updater.cpp
 )
 ament_target_dependencies(puma_motor_driver ${DEPENDENCIES})
+ament_export_libraries(puma_motor_driver)
 
 add_executable(puma_multi_controller_node src/multi_controller_node.cpp)
 ament_target_dependencies(puma_multi_controller_node ${DEPENDENCIES})
@@ -64,6 +65,10 @@ install(TARGETS puma_motor_driver puma_multi_controller_node
 	LIBRARY DESTINATION lib
 	RUNTIME DESTINATION bin
 )
+
+install(TARGETS puma_motor_driver
+  EXPORT export_${PROJECT_NAME}
+  DESTINATION lib)
 
 install(
   DIRECTORY launch
