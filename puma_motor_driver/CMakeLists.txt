@@ -26,11 +26,30 @@ find_package(socketcan_interface REQUIRED)
 ################################################################################
 # Build
 ################################################################################
+
+################## Boost Settings ##################
+set(Boost_USE_STATIC_LIBS OFF)
+set(Boost_USE_MULTITHREADED ON)
+set(Boost_USE_STATIC_RUNTIME OFF)
+find_package(Boost REQUIRED)
+####################################################
+
 include_directories(
   include
+	${Boost_INCLUDE_DIRS}
 )
 
 ament_export_include_directories(include)
+
+add_library(puma_motor_driver SHARED
+  src/driver.cpp
+  #src/serial_gateway.cpp
+  src/socketcan_gateway.cpp
+  src/multi_driver_node.cpp
+  src/diagnostic_updater.cpp
+)
+
+target_link_libraries(puma_motor_driver ${Boost_LIBRARIES})
 
 set(DEPENDENCIES
 	ament_cmake
@@ -43,13 +62,7 @@ set(DEPENDENCIES
 	socketcan_interface
 )
 
-add_library(puma_motor_driver
-  src/driver.cpp
-  #src/serial_gateway.cpp
-  src/socketcan_gateway.cpp
-  src/multi_driver_node.cpp
-  src/diagnostic_updater.cpp
-)
+
 ament_target_dependencies(puma_motor_driver ${DEPENDENCIES})
 ament_export_libraries(puma_motor_driver)
 
