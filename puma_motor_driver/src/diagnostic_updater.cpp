@@ -23,35 +23,46 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 */
 #include <string>
 
-#include "diagnostic_updater/update_functions.h"
-#include "puma_motor_driver/diagnostic_updater.h"
-#include "puma_motor_msgs/Status.h"
+#include "diagnostic_updater/update_functions.hpp"
+#include "puma_motor_driver/diagnostic_updater.hpp"
+#include "puma_motor_msgs/msg/status.hpp"
 
 namespace puma_motor_driver
 {
 
-  typedef diagnostic_msgs::DiagnosticStatus Status;
+  typedef diagnostic_msgs::msg::DiagnosticStatus Status;
 
-PumaMotorDriverDiagnosticUpdater::PumaMotorDriverDiagnosticUpdater()
+PumaMotorDriverDiagnosticUpdater::PumaMotorDriverDiagnosticUpdater(const std::string node_name)
+  : 
+	Node(node_name),
+	Updater(
+		this->get_node_base_interface(),
+		this->get_node_logging_interface(),
+		this->get_node_parameters_interface(),
+		this->get_node_timers_interface(),
+		this->get_node_topics_interface(),
+		1.0
+  )
 {
   initialized_ = false;
   setHardwareID("none");
-  status_sub_ = nh_.subscribe("status", 5, &PumaMotorDriverDiagnosticUpdater::statusCallback, this);
+  status_sub_ = this->create_subscription<puma_motor_msgs::msg::MultiStatus>(
+		"status", 5, std::bind(&PumaMotorDriverDiagnosticUpdater::statusCallback, this, std::placeholders::_1));
 }
 
 const char* PumaMotorDriverDiagnosticUpdater::getModeString(uint8_t mode)
 {
   switch (mode)
   {
-    case puma_motor_msgs::Status::MODE_VOLTAGE:
+    case puma_motor_msgs::msg::Status::MODE_VOLTAGE:
       return "Voltage Control";
-    case puma_motor_msgs::Status::MODE_CURRENT:
+    case puma_motor_msgs::msg::Status::MODE_CURRENT:
       return "Current Control";
-    case puma_motor_msgs::Status::MODE_SPEED:
+    case puma_motor_msgs::msg::Status::MODE_SPEED:
       return "Speed control";
-    case puma_motor_msgs::Status::MODE_POSITION:
+    case puma_motor_msgs::msg::Status::MODE_POSITION:
       return "Position control";
-    case puma_motor_msgs::Status::MODE_VCOMP:
+    case puma_motor_msgs::msg::Status::MODE_VCOMP:
       return "Vcomp control";
     default:
       return "Unknown control";
@@ -62,13 +73,13 @@ const char* PumaMotorDriverDiagnosticUpdater::getFaultString(uint8_t fault)
 {
   switch (fault)
   {
-    case puma_motor_msgs::Status::FAULT_CURRENT:
+    case puma_motor_msgs::msg::Status::FAULT_CURRENT:
       return "current fault";
-    case puma_motor_msgs::Status::FAULT_TEMPERATURE:
+    case puma_motor_msgs::msg::Status::FAULT_TEMPERATURE:
       return "temperature fault";
-    case puma_motor_msgs::Status::FAULT_BUS_VOLTAGE:
+    case puma_motor_msgs::msg::Status::FAULT_BUS_VOLTAGE:
       return "bus voltage failt";
-    case puma_motor_msgs::Status::FAULT_BRIDGE_DRIVER:
+    case puma_motor_msgs::msg::Status::FAULT_BRIDGE_DRIVER:
       return "bridge driver fault";
     default:
       return "unknown fault";
@@ -99,23 +110,23 @@ void PumaMotorDriverDiagnosticUpdater::driverDiagnostics(diagnostic_updater::Dia
   stat.add("Value of the auxiliary ADC (V)", last_status_->drivers[driver].analog_input);
 }
 
-void PumaMotorDriverDiagnosticUpdater::statusCallback(const puma_motor_msgs::MultiStatus::ConstPtr& status_msg)
+void PumaMotorDriverDiagnosticUpdater::statusCallback(const puma_motor_msgs::msg::MultiStatus::SharedPtr status_msg)
 {
   last_status_ = status_msg;
   if (!initialized_)
   {
-    for (int i = 0; i < status_msg->drivers.size(); i++)
+    for (int i = 0; i < static_cast<int>(status_msg->drivers.size()); i++)
     {
       char name[100];
       snprintf(name, sizeof(name), "Puma motor driver on: %s with CAN ID (%d)",
         last_status_->drivers[i].device_name.c_str(), last_status_->drivers[i].device_number);
-      add(name, boost::bind(&PumaMotorDriverDiagnosticUpdater::driverDiagnostics, this, _1, i));
+      add(name, std::bind(&PumaMotorDriverDiagnosticUpdater::driverDiagnostics, this, std::placeholders::_1, i));
     }
     initialized_ = true;
   }
   else
   {
-    update();
+    force_update();
   }
 }
 

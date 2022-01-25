@@ -1,7 +1,7 @@
 /**
 Software License Agreement (BSD)
 
-\authors   Tony Baltovski <tbaltovski@clearpathrobotics.com>
+\authors   Mike Purvis <mpurvis@clearpathrobotics.com>
 \copyright Copyright (c) 2015, Clearpath Robotics, Inc., All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that
@@ -21,49 +21,38 @@ OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTE
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef PUMA_MOTOR_DRIVER_MULTI_DRIVER_NODE_H
-#define PUMA_MOTOR_DRIVER_MULTI_DRIVER_NODE_H
+#ifndef PUMA_MOTOR_DRIVER_MESSAGE_H
+#define PUMA_MOTOR_DRIVER_MESSAGE_H
+
+#include "puma_motor_driver/can_proto.hpp"
 
 #include <stdint.h>
-#include <string>
-#include <vector>
-#include <ros/ros.h>
 
-#include "puma_motor_driver/driver.h"
-#include "puma_motor_msgs/MultiStatus.h"
-#include "puma_motor_msgs/Status.h"
-#include "puma_motor_msgs/MultiFeedback.h"
-#include "puma_motor_msgs/Feedback.h"
 
 namespace puma_motor_driver
 {
-class MultiDriverNode
+
+struct Message
 {
-public:
-  MultiDriverNode(ros::NodeHandle& nh, std::vector<puma_motor_driver::Driver>& drivers);
+  uint8_t data[8];
+  uint32_t id;
+  uint8_t len;
 
-  void publishFeedback();
-  void publishStatus();
-  void feedbackTimerCb(const ros::TimerEvent&);
-  void statusTimerCb(const ros::TimerEvent&);
-  void activePublishers(const bool activate);
+  explicit Message(uint32_t id = 0) : id(id), len(0)
+  {
+  }
 
-private:
-  ros::NodeHandle nh_;
-  std::vector<puma_motor_driver::Driver>& drivers_;
+  uint32_t getDeviceNumber() const
+  {
+    return id & CAN_MSGID_DEVNO_M;
+  }
 
-  puma_motor_msgs::MultiStatus status_msg_;
-  puma_motor_msgs::MultiFeedback feedback_msg_;
-
-  ros::Publisher status_pub_;
-  ros::Publisher feedback_pub_;
-
-  ros::Timer status_pub_timer_;
-  ros::Timer feedback_pub_timer_;
-
-  bool active_;
+  uint32_t getApi() const
+  {
+    return id & (CAN_MSGID_FULL_M ^ CAN_MSGID_DEVNO_M);
+  }
 };
 
 }  // namespace puma_motor_driver
 
-#endif  // PUMA_MOTOR_DRIVER_MULTI_DRIVER_NODE_H
+#endif  // PUMA_MOTOR_DRIVER_MESSAGE_H

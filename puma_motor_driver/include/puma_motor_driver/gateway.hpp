@@ -21,10 +21,11 @@ OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTE
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef PUMA_MOTOR_DRIVER_MESSAGE_H
-#define PUMA_MOTOR_DRIVER_MESSAGE_H
+#ifndef PUMA_MOTOR_DRIVER_GATEWAY_H
+#define PUMA_MOTOR_DRIVER_GATEWAY_H
 
-#include "puma_motor_driver/can_proto.h"
+#include "puma_motor_driver/can_proto.hpp"
+#include "puma_motor_driver/message.hpp"
 
 #include <stdint.h>
 
@@ -32,27 +33,28 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 namespace puma_motor_driver
 {
 
-struct Message
+class Gateway
 {
-  uint8_t data[8];
-  uint32_t id;
-  uint8_t len;
+public:
+  virtual bool connect() = 0;
+  virtual bool isConnected() const = 0;
 
-  explicit Message(uint32_t id = 0) : id(id), len(0)
-  {
-  }
+  // virtual void run() = 0;
 
-  uint32_t getDeviceNumber() const
-  {
-    return id & CAN_MSGID_DEVNO_M;
-  }
+  /**
+   * Queue specified message to be sent on the bus.
+   */
+  virtual void queue(const Message& msg) = 0;
 
-  uint32_t getApi() const
-  {
-    return id & (CAN_MSGID_FULL_M ^ CAN_MSGID_DEVNO_M);
-  }
+  /**
+   * Receive the next available message from the bus, blocking for
+   * timeout_millis if nonzero.
+   *
+   * \return True if a message was returned false if timeout occurred.
+   */
+  virtual bool recv(Message* msg) = 0;
 };
 
 }  // namespace puma_motor_driver
 
-#endif  // PUMA_MOTOR_DRIVER_MESSAGE_H
+#endif  // PUMA_MOTOR_DRIVER_GATEWAY_H

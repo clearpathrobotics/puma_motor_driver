@@ -32,11 +32,11 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 #include <thread>  // NOLINT(build/c++11)
 #include <unistd.h>
 
-#include <socketcan_interface/socketcan.h>
-#include <socketcan_interface/threading.h>
+#include "socketcan_interface/socketcan.hpp"
+#include "socketcan_interface/threading.hpp"
 
-#include "puma_motor_driver/gateway.h"
-#include "puma_motor_driver/message.h"
+#include "puma_motor_driver/gateway.hpp"
+#include "puma_motor_driver/message.hpp"
 
 namespace puma_motor_driver
 {
