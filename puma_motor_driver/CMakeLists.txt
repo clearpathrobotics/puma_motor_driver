@@ -14,7 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES puma_motor_driver
-  CATKIN_DEPENDS diagnostic_updater puma_motor_msgs roscpp rospy sensor_msgs serial
+  CATKIN_DEPENDS diagnostic_updater puma_motor_msgs roscpp sensor_msgs serial
 )
 
 include_directories(
