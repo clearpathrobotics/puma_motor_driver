@@ -22,6 +22,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCL
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <map>
 #include <string>
 #include <vector>
 
@@ -52,10 +53,15 @@ public:
     status_count_(0),
     desired_mode_(puma_motor_msgs::Status::MODE_SPEED)
   {
-    drivers_.push_back(puma_motor_driver::Driver(gateway_, 3, "fl"));
-    drivers_.push_back(puma_motor_driver::Driver(gateway_, 5, "fr"));
-    drivers_.push_back(puma_motor_driver::Driver(gateway_, 2, "rl"));
-    drivers_.push_back(puma_motor_driver::Driver(gateway_, 4, "rr"));
+    std::map<std::string, int> drivers_map;
+    if (nh_private_.getParam("drivers", drivers_map));
+    {
+      for (auto const& driver : drivers_map)
+      {
+        ROS_INFO("Added driver %s with CAN ID:(%i)", driver.first.c_str(), driver.second);
+        drivers_.push_back(puma_motor_driver::Driver(gateway_, driver.second, driver.first));
+      }
+    }
 
     cmd_sub_ = nh_.subscribe("cmd", 1, &MultiControllerNode::cmdCallback, this);
 

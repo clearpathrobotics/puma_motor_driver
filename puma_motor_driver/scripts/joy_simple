@@ -1,0 +1,35 @@
+#!/usr/bin/env python3
+
+import rospy
+import sensor_msgs.msg
+
+rospy.init_node("simple_joy")
+layout = rospy.get_param('~layout_config', '2wd')
+drive_type = rospy.get_param('~drive_config', 'diff')
+pub = rospy.Publisher('cmd', sensor_msgs.msg.JointState, queue_size=1)
+
+def clip(val):
+    return max(-1, min(1.0, val))
+
+def callback(joy):
+    x_linear = joy.axes[1]
+    y_linear = joy.axes[0]
+    z_angular = joy.axes[2]
+
+    js = sensor_msgs.msg.JointState()
+    velocity = []
+
+    if (layout == '2wd'):
+        js.name = ['left', ' right']
+        velocity = [x_linear - z_angular, -(x_linear + z_angular)]
+    else:
+        js.name = ['front_left', 'front,right', 'rear_left', 'rear_right']
+
+        if (drive_type == 'diff'):
+            velocity = [x_linear - z_angular, -(x_linear + z_angular), x_linear - z_angular, -(x_linear + z_angular)]
+    js.velocity = velocity
+    print(js)
+    pub.publish(js)
+
+rospy.Subscriber('joy', sensor_msgs.msg.Joy, callback)
+rospy.spin()

@@ -1,12 +1,21 @@
 <?xml version="1.0"?>
 <launch>
+  <arg name="canbus_dev" default="can0" />
+  <arg name="layout_config" default="4wd" /> <!-- 2wd (only diff) or 4wd -->
+  <arg name="layout_config_filepath" default="$(find puma_motor_driver)/config/$(arg layout_config).yaml" />
+  <arg name="drive_config" default="diff" /> <!-- diff, omni or mecanum -->
+
   <node pkg="joy" name="joy" type="joy_node">
     <param name="autorepeat_rate" value="10" />
   </node>
 
-  <node pkg="puma_motor_driver" name="joy_omni" type="joy_omni" />
+  <node pkg="puma_motor_driver" name="joy_simple" type="joy_simple">
+    <param name="layout_config" value="$(arg layout_config)" />
+    <param name="drive_config" value="$(arg drive_config)" />
+  </node>
 
   <node pkg="puma_motor_driver" name="puma_multi_controller_node" type="puma_multi_controller_node">
-    <param name="serial_port" value="/dev/ttyUSB0" />
+    <param name="canbus_dev" value="$(arg canbus_dev)" />
+    <rosparam command="load" file="$(arg layout_config_filepath)" />
   </node>
 </launch>
