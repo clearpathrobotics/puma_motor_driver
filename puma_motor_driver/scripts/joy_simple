@@ -7,14 +7,15 @@ rospy.init_node("simple_joy")
 layout = rospy.get_param('~layout_config', '2wd')
 drive_type = rospy.get_param('~drive_config', 'diff')
 pub = rospy.Publisher('cmd', sensor_msgs.msg.JointState, queue_size=1)
+MAX_VEL = 0.1
 
 def clip(val):
-    return max(-1, min(1.0, val))
+    return max(-MAX_VEL, min(MAX_VEL, val))
 
 def callback(joy):
     x_linear = joy.axes[1]
     y_linear = joy.axes[0]
-    z_angular = joy.axes[2]
+    z_angular = joy.axes[3]
 
     js = sensor_msgs.msg.JointState()
     velocity = []
@@ -23,12 +24,11 @@ def callback(joy):
         js.name = ['left', ' right']
         velocity = [x_linear - z_angular, -(x_linear + z_angular)]
     else:
-        js.name = ['front_left', 'front,right', 'rear_left', 'rear_right']
+        js.name = ['front_left', 'front_right', 'rear_left', 'rear_right']
 
         if (drive_type == 'diff'):
-            velocity = [x_linear - z_angular, -(x_linear + z_angular), x_linear - z_angular, -(x_linear + z_angular)]
+            velocity = [(x_linear - z_angular), (x_linear + z_angular), -(x_linear - z_angular), -(x_linear + z_angular)]
     js.velocity = velocity
-    print(js)
     pub.publish(js)
 
 rospy.Subscriber('joy', sensor_msgs.msg.Joy, callback)
