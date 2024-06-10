@@ -20,7 +20,7 @@ find_package(puma_motor_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
-find_package(serial_driver REQUIRED)
+#find_package(serial_driver REQUIRED)
 find_package(socketcan_interface REQUIRED)
 
 ################################################################################
@@ -43,10 +43,9 @@ ament_export_include_directories(include)
 
 add_library(puma_motor_driver SHARED
   src/driver.cpp
-  #src/serial_gateway.cpp
+  # src/serial_gateway.cpp
   src/socketcan_gateway.cpp
-  src/multi_driver_node.cpp
-  src/diagnostic_updater.cpp
+  # src/diagnostic_updater.cpp
 )
 
 target_link_libraries(puma_motor_driver ${Boost_LIBRARIES})
@@ -58,7 +57,7 @@ set(DEPENDENCIES
 	rclcpp
 	std_msgs
 	sensor_msgs
-	serial_driver
+	# serial_driver
 	socketcan_interface
 )
 
@@ -66,17 +65,18 @@ set(DEPENDENCIES
 ament_target_dependencies(puma_motor_driver ${DEPENDENCIES})
 ament_export_libraries(puma_motor_driver)
 
-add_executable(puma_multi_controller_node src/multi_controller_node.cpp)
-ament_target_dependencies(puma_multi_controller_node ${DEPENDENCIES})
-target_link_libraries(puma_multi_controller_node puma_motor_driver)
+add_executable(multi_puma_node src/multi_puma_node.cpp
+  src/driver.cpp
+  src/socketcan_gateway
+)
+ament_target_dependencies(multi_puma_node ${DEPENDENCIES})
+target_link_libraries(multi_puma_node ${Boost_LIBRARIES})
 
 ################################################################################
 # Install
 ################################################################################
-install(TARGETS puma_motor_driver puma_multi_controller_node
-	ARCHIVE DESTINATION lib
-	LIBRARY DESTINATION lib
-	RUNTIME DESTINATION bin
+install(TARGETS multi_puma_node
+  DESTINATION lib/${PROJECT_NAME}
 )
 
 install(TARGETS puma_motor_driver
@@ -84,7 +84,7 @@ install(TARGETS puma_motor_driver
   DESTINATION lib)
 
 install(
-  DIRECTORY launch
+  DIRECTORY launch config
   DESTINATION share/${PROJECT_NAME}
 )
 
