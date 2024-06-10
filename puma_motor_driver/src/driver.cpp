@@ -201,7 +201,10 @@ void Driver::commandDutyCycle(const float cmd)
 void Driver::commandSpeed(const double cmd)
 {
   // Converting from rad/s to RPM through the gearbox.
-  sendFixed16x16((LM_API_SPD_SET | device_number_), (cmd * radPerSecToRpm()));
+  double rpm = cmd * radPerSecToRpm();
+  //sendFixed16x16((LM_API_SPD_SET | device_number_), (cmd * radPerSecToRpm()));
+  RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Driver::commandSpeed %f", rpm);
+  sendFixed16x16((LM_API_SPD_SET | device_number_), (rpm));
 }
 
 void Driver::verifyParams()
@@ -509,7 +512,7 @@ void Driver::setMode(const uint8_t mode, const double p, const double i, const d
       resetConfiguration();
     }
     setGains(p, i, d);
-    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), 
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"),
         "Puma Motor Controller on %s (%i): mode set to a closed-loop control with PID gains of P:%f, I:%f and D:%f.",
         device_name_.c_str(), device_number_, gain_p_, gain_i_, gain_d_);
   }
@@ -597,69 +600,192 @@ void Driver::updateGains()
   state_ = ConfigurationState::PGain;
 }
 
+bool Driver::receivedDutyCycle()
+{
+  Field* field = statusFieldForMessage(Message(LM_API_STATUS_VOLTOUT));
+  return field->received;
+}
+
+bool Driver::receivedBusVoltage()
+{
+  Field* field = statusFieldForMessage(Message(LM_API_STATUS_VOLTBUS));
+  return field->received;
+}
+
+bool Driver::receivedCurrent()
+{
+  Field* field = statusFieldForMessage(Message(LM_API_STATUS_CURRENT));
+  return field->received;
+}
+
+bool Driver::receivedPosition()
+{
+  Field* field = statusFieldForMessage(Message(LM_API_STATUS_POS));
+  return field->received;
+}
+
+bool Driver::receivedSpeed()
+{
+  Field* field = statusFieldForMessage(Message(LM_API_STATUS_SPD));
+  return field->received;
+}
+
+bool Driver::receivedFault()
+{
+  Field* field = statusFieldForMessage(Message(LM_API_STATUS_FAULT));
+  return field->received;
+}
+
+bool Driver::receivedPower()
+{
+  Field* field = statusFieldForMessage(Message(LM_API_STATUS_POWER));
+  return field->received;
+}
+
+bool Driver::receivedMode()
+{
+  Field* field = statusFieldForMessage(Message(LM_API_STATUS_CMODE));
+  return field->received;
+}
+
+bool Driver::receivedOutVoltage()
+{
+  Field* field = statusFieldForMessage(Message(LM_API_STATUS_VOUT));
+  return field->received;
+}
+
+bool Driver::receivedTemperature()
+{
+  Field* field = statusFieldForMessage(Message(LM_API_STATUS_TEMP));
+  return field->received;
+}
+
+bool Driver::receivedAnalogInput()
+{
+  Field* field = statusFieldForMessage(Message(CPR_API_STATUS_ANALOG));
+  return field->received;
+}
+
+bool Driver::receivedSetpoint()
+{
+  switch (control_mode_)
+  {
+    case puma_motor_msgs::msg::Status::MODE_CURRENT:
+      return receivedCurrentSetpoint();
+      break;
+    case puma_motor_msgs::msg::Status::MODE_POSITION:
+      return receivedPositionSetpoint();
+      break;
+    case puma_motor_msgs::msg::Status::MODE_SPEED:
+      return receivedSpeedSetpoint();
+      break;
+    case puma_motor_msgs::msg::Status::MODE_VOLTAGE:
+      return receivedDutyCycleSetpoint();
+      break;
+    default:
+      return 0;
+      break;
+  }
+}
+
+bool Driver::receivedSpeedSetpoint()
+{
+  Field* field = spdFieldForMessage(Message(LM_API_SPD_SET));
+  return field->received;
+}
+
+bool Driver::receivedDutyCycleSetpoint()
+{
+  Field* field = voltageFieldForMessage(Message(LM_API_VOLT_SET));
+  return field->received;
+}
+
+bool Driver::receivedCurrentSetpoint()
+{
+  Field* field = ictrlFieldForMessage(Message(LM_API_ICTRL_SET));
+  return field->received;
+}
+
+bool Driver::receivedPositionSetpoint()
+{
+  Field* field = posFieldForMessage(Message(LM_API_POS_SET));
+  return field->received;
+}
+
 float Driver::lastDutyCycle()
 {
   Field* field = statusFieldForMessage(Message(LM_API_STATUS_VOLTOUT));
+  field->received = false;
   return (field->interpretFixed8x8() / 128.0);
 }
 
 float Driver::lastBusVoltage()
 {
   Field* field = statusFieldForMessage(Message(LM_API_STATUS_VOLTBUS));
+  field->received = false;
   return field->interpretFixed8x8();
 }
 
 float Driver::lastCurrent()
 {
   Field* field = statusFieldForMessage(Message(LM_API_STATUS_CURRENT));
+  field->received = false;
   return field->interpretFixed8x8();
 }
 
 double Driver::lastPosition()
 {
   Field* field = statusFieldForMessage(Message(LM_API_STATUS_POS));
+  field->received = false;
   return (field->interpretFixed16x16() * ((2 * M_PI) / gear_ratio_));  // Convert rev to rad
 }
 
 double Driver::lastSpeed()
 {
   Field* field = statusFieldForMessage(Message(LM_API_STATUS_SPD));
+  field->received = false;
   return (field->interpretFixed16x16() * ((2 * M_PI) / (gear_ratio_ * 60)));  // Convert RPM to rad/s
 }
 
 uint8_t Driver::lastFault()
 {
   Field* field = statusFieldForMessage(Message(LM_API_STATUS_FAULT));
+  field->received = false;
   return field->data[0];
 }
 
 uint8_t Driver::lastPower()
 {
   Field* field = statusFieldForMessage(Message(LM_API_STATUS_POWER));
+  field->received = false;
   return field->data[0];
 }
 
 uint8_t Driver::lastMode()
 {
   Field* field = statusFieldForMessage(Message(LM_API_STATUS_CMODE));
+  field->received = false;
   return field->data[0];
 }
 
 float Driver::lastOutVoltage()
 {
   Field* field = statusFieldForMessage(Message(LM_API_STATUS_VOUT));
+  field->received = false;
   return field->interpretFixed8x8();
 }
 
 float Driver::lastTemperature()
 {
   Field* field = statusFieldForMessage(Message(LM_API_STATUS_TEMP));
+  field->received = false;
   return field->interpretFixed8x8();
 }
 
 float Driver::lastAnalogInput()
 {
   Field* field = statusFieldForMessage(Message(CPR_API_STATUS_ANALOG));
+  field->received = false;
   return field->interpretFixed8x8();
 }
 
@@ -687,23 +813,28 @@ double Driver::lastSetpoint()
 double Driver::statusSpeedGet()
 {
   Field* field = spdFieldForMessage(Message(LM_API_SPD_SET));
+  field->received = false;
   return (field->interpretFixed16x16() * ((2 * M_PI) / (gear_ratio_ * 60)));  // Convert RPM to rad/s
 }
 
 float Driver::statusDutyCycleGet()
 {
   Field* field = voltageFieldForMessage(Message(LM_API_VOLT_SET));
+  field->received = false;
   return (field->interpretFixed8x8() / 128.0);
 }
 
 float Driver::statusCurrentGet()
 {
   Field* field = ictrlFieldForMessage(Message(LM_API_ICTRL_SET));
+  field->received = false;
   return field->interpretFixed8x8();
 }
+
 double Driver::statusPositionGet()
 {
   Field* field = posFieldForMessage(Message(LM_API_POS_SET));
+  field->received = false;
   return (field->interpretFixed16x16() * (( 2 * M_PI) / gear_ratio_));  // Convert rev to rad
 }
 
