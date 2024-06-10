@@ -145,6 +145,106 @@ public:
   void setGains(const double p, const double i, const double d);
 
   /**
+   * Check fault response field was received.
+   *
+   * @return received flag
+  */
+  bool receivedFault();
+  /**
+   * Check power field was received.
+   *
+   * @return received flag
+  */
+  bool receivedPower();
+  /**
+   * Check mode field was received.
+   *
+   * @return received flag
+  */
+  bool receivedMode();
+  /**
+   * Check duty cycle field was received.
+   *
+   * @return received flag
+  */
+  bool receivedDutyCycle();
+  /**
+   * Check bus voltage field was received.
+   *
+   * @return received flag
+  */
+  bool receivedBusVoltage();
+  /**
+   * Check current field was received.
+   *
+   * @return received flag
+  */
+  bool receivedCurrent();
+  /**
+   * Check out voltage field was received.
+   *
+   * @return received flag
+  */
+  bool receivedOutVoltage();
+  /**
+   * Check teperature field was received.
+   *
+   * @return received flag
+  */
+  bool receivedTemperature();
+  /**
+   * Check analog input field was received.
+   *
+   * @return received flag
+  */
+  bool receivedAnalogInput();
+  /**
+   * Check position field was received.
+   *
+   * @return received flag
+  */
+  bool receivedPosition();
+  /**
+   * Check speed field was received.
+   *
+   * @return received flag
+  */
+  bool receivedSpeed();
+  /**
+   * Check setpoint field was received.
+   *
+   * @return received flag
+  */
+  bool receivedSetpoint();
+  /**
+   * Check the set-point response in voltage
+   * open-loop control was received.
+   *
+   * @return received flag
+   */
+  bool receivedDutyCycleSetpoint();
+  /**
+   * Check the set-point response in speed
+   * closed-loop control was received.
+   *
+   * @return received flag
+   */
+  bool receivedSpeedSetpoint();
+  /**
+   * Check the set-point response in currrent
+   * closed-loop control was received.
+   *
+   * @return received flag
+   */
+  bool receivedCurrentSetpoint();
+  /**
+   * Check the set-point response in position
+   * closed-loop control was received.
+   *
+   * @return received flag
+   */
+  bool receivedPositionSetpoint();
+  /**
    * Process the last received fault response.
    *
    * @return state of fault status.
