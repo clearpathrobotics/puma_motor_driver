@@ -357,13 +357,13 @@ int main(int argc, char * argv[])
 
   rclcpp::executors::MultiThreadedExecutor exe;
 
-  std::shared_ptr<MultiPumaNode> puma_node =
-    std::make_shared<MultiPumaNode>("puma_node");
+  std::shared_ptr<MultiPumaNode> multi_puma_node =
+    std::make_shared<MultiPumaNode>("multi_puma_node");
 
   // std::shared_ptr<puma_motor_driver::PumaMotorDriverDiagnosticUpdater> puma_motor_driver_diagnostic_updater =
   // std::make_shared<puma_motor_driver::PumaMotorDriverDiagnosticUpdater>("puma_motor_driver_diagnostic_updater");
 
-  exe.add_node(puma_node);
+  exe.add_node(multi_puma_node);
   // exe.add_node(puma_motor_driver_diagnostic_updater);
   exe.spin();
 
