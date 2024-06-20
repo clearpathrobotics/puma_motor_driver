@@ -21,8 +21,8 @@
 #include <boost/thread/thread.hpp>
 #include <functional>
 
-#include "socketcan_interface/dispatcher.hpp"
-#include "socketcan_interface/interface.hpp"
+#include "clearpath_socketcan_interface/dispatcher.hpp"
+#include "clearpath_socketcan_interface/interface.hpp"
 
 namespace can
 {

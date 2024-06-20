@@ -25,7 +25,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 #include <iostream>
 #include <string>
 
-#include "socketcan_interface/make_shared.hpp"
+#include "clearpath_socketcan_interface/make_shared.hpp"
 #include "puma_motor_driver/socketcan_gateway.hpp"
 
 namespace puma_motor_driver

@@ -30,8 +30,8 @@
 #include <string>
 #include <memory>
 
-#include "socketcan_interface/asio_base.hpp"
-#include "socketcan_interface/dispatcher.hpp"
+#include "clearpath_socketcan_interface/asio_base.hpp"
+#include "clearpath_socketcan_interface/dispatcher.hpp"
 
 namespace can
 {

@@ -25,7 +25,7 @@
 #include <memory>
 #include <functional>
 
-#include "socketcan_interface/logging.hpp"
+#include "clearpath_socketcan_interface/logging.hpp"
 
 namespace can
 {

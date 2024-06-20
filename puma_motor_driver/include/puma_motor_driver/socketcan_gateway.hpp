@@ -32,8 +32,8 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 #include <thread>  // NOLINT(build/c++11)
 #include <unistd.h>
 
-#include "socketcan_interface/socketcan.hpp"
-#include "socketcan_interface/threading.hpp"
+#include "clearpath_socketcan_interface/socketcan.hpp"
+#include "clearpath_socketcan_interface/threading.hpp"
 
 #include "puma_motor_driver/gateway.hpp"
 #include "puma_motor_driver/message.hpp"

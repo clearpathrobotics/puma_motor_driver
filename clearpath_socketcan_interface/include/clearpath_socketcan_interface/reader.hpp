@@ -20,7 +20,7 @@
 #include <boost/thread/condition_variable.hpp>
 #include <boost/chrono.hpp>
 
-#include <socketcan_interface/interface.hpp>
+#include <clearpath_socketcan_interface/interface.hpp>
 
 #include <deque>
 

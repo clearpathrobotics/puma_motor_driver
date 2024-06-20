@@ -19,7 +19,7 @@
 #include <vector>
 #include <memory>
 
-#include "socketcan_interface/interface.hpp"
+#include "clearpath_socketcan_interface/interface.hpp"
 
 namespace can
 {

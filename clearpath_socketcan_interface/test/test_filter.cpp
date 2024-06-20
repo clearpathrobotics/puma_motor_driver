@@ -17,9 +17,9 @@
 
 #include <string>
 
-#include "socketcan_interface/filter.hpp"
-#include "socketcan_interface/string.hpp"
-#include "socketcan_interface/dummy.hpp"
+#include "clearpath_socketcan_interface/filter.hpp"
+#include "clearpath_socketcan_interface/string.hpp"
+#include "clearpath_socketcan_interface/dummy.hpp"
 
 TEST(FilterTest, simpleMask)
 {

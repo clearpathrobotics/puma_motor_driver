@@ -19,8 +19,8 @@
 #include <sstream>
 #include <string>
 
-#include "socketcan_interface/interface.hpp"
-#include "socketcan_interface/filter.hpp"
+#include "clearpath_socketcan_interface/interface.hpp"
+#include "clearpath_socketcan_interface/filter.hpp"
 
 namespace can
 {

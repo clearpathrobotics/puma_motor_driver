@@ -16,7 +16,7 @@
 #include <iomanip>
 #include <string>
 
-#include "socketcan_interface/string.hpp"
+#include "clearpath_socketcan_interface/string.hpp"
 
 namespace can
 {

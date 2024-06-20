@@ -11,13 +11,13 @@
   <depend>diagnostic_updater</depend>
   <depend>puma_motor_msgs</depend>
   <depend>rclcpp</depend>
-  <depend>socketcan_interface</depend>
+  <depend>clearpath_socketcan_interface</depend>
   <depend>sensor_msgs</depend>
   <!-- <depend>serial_driver</depend> -->
 
   <exec_depend>can-utils</exec_depend>
   <exec_depend>joy</exec_depend>
-	
+
 	<export>
   	<build_type>ament_cmake</build_type>
   </export>

@@ -28,7 +28,7 @@
 #include <boost/chrono.hpp>
 #include <string>
 
-#include "socketcan_interface/interface.hpp"
+#include "clearpath_socketcan_interface/interface.hpp"
 
 namespace can
 {

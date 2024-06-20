@@ -21,7 +21,7 @@
 #include <unordered_set>
 #include <string>
 
-#include "socketcan_interface/socketcan.hpp"
+#include "clearpath_socketcan_interface/socketcan.hpp"
 
 void print_error(const can::State & s);
 

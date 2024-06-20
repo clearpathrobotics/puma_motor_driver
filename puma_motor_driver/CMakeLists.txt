@@ -21,7 +21,7 @@ find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 #find_package(serial_driver REQUIRED)
-find_package(socketcan_interface REQUIRED)
+find_package(clearpath_socketcan_interface REQUIRED)
 
 ################################################################################
 # Build
@@ -51,14 +51,14 @@ add_library(puma_motor_driver SHARED
 target_link_libraries(puma_motor_driver ${Boost_LIBRARIES})
 
 set(DEPENDENCIES
-	ament_cmake
-	diagnostic_updater
-	puma_motor_msgs
-	rclcpp
-	std_msgs
-	sensor_msgs
-	# serial_driver
-	socketcan_interface
+  ament_cmake
+  diagnostic_updater
+  puma_motor_msgs
+  rclcpp
+  std_msgs
+  sensor_msgs
+  # serial_driver
+  clearpath_socketcan_interface
 )
 
 

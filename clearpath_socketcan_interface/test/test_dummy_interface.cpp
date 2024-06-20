@@ -18,8 +18,8 @@
 #include <string>
 #include <list>
 
-#include "socketcan_interface/dispatcher.hpp"
-#include "socketcan_interface/dummy.hpp"
+#include "clearpath_socketcan_interface/dispatcher.hpp"
+#include "clearpath_socketcan_interface/dummy.hpp"
 
 class DummyInterfaceTest
   : public ::testing::Test

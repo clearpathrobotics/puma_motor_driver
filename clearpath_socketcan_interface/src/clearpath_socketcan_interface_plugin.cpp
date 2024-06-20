@@ -14,6 +14,6 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <pluginlib/class_list_macros.hpp>
-#include "socketcan_interface/socketcan.hpp"
+#include "clearpath_socketcan_interface/socketcan.hpp"
 
 PLUGINLIB_EXPORT_CLASS(can::SocketCANInterface, can::DriverInterface)

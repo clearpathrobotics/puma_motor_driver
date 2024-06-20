@@ -15,7 +15,7 @@
 
 #include <gtest/gtest.h>
 
-#include <socketcan_interface/dispatcher.hpp>
+#include <clearpath_socketcan_interface/dispatcher.hpp>
 
 #include <vector>
 

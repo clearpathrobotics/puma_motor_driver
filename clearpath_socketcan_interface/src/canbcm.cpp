@@ -15,8 +15,8 @@
 
 #include <iostream>
 
-#include "socketcan_interface/bcm.hpp"
-#include "socketcan_interface/string.hpp"
+#include "clearpath_socketcan_interface/bcm.hpp"
+#include "clearpath_socketcan_interface/string.hpp"
 
 int main(int argc, char * argv[])
 {
