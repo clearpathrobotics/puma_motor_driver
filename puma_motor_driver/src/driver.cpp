@@ -203,7 +203,7 @@ void Driver::commandSpeed(const double cmd)
   // Converting from rad/s to RPM through the gearbox.
   double rpm = cmd * radPerSecToRpm();
   //sendFixed16x16((LM_API_SPD_SET | device_number_), (cmd * radPerSecToRpm()));
-  RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Driver::commandSpeed %f", rpm);
+  // RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Driver::commandSpeed %f", rpm);
   sendFixed16x16((LM_API_SPD_SET | device_number_), (rpm));
 }
 

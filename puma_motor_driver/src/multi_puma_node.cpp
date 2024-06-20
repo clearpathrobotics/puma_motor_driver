@@ -75,16 +75,16 @@ MultiPumaNode::MultiPumaNode(const std::string node_name) :
 
   // Subsciber
   cmd_sub_ = this->create_subscription<sensor_msgs::msg::JointState>(
-    "cmd",
+    "~/cmd",
     rclcpp::SensorDataQoS(),
     std::bind(&MultiPumaNode::cmdCallback, this, std::placeholders::_1));
 
   // Publishers
   feedback_pub_ = this->create_publisher<puma_motor_msgs::msg::MultiFeedback>(
-    "feedback",
+    "~/feedback",
     rclcpp::SensorDataQoS());
   status_pub_ = this->create_publisher<puma_motor_msgs::msg::MultiStatus>(
-    "status",
+    "~/status",
     rclcpp::SensorDataQoS());
 
   // Socket
@@ -240,7 +240,7 @@ void MultiPumaNode::cmdCallback(const sensor_msgs::msg::JointState::SharedPtr ms
           }
           else if (desired_mode_ == puma_motor_msgs::msg::Status::MODE_SPEED)
           {
-            RCLCPP_INFO(this->get_logger(), "MultiPumaNode::cmdCallback %s : %f", msg->name[i].c_str(), msg->velocity[i]);
+            //RCLCPP_INFO(this->get_logger(), "MultiPumaNode::cmdCallback %s : %f", msg->name[i].c_str(), msg->velocity[i]);
             driver.commandSpeed(msg->velocity[i]);
           }
         }
