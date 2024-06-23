@@ -18,7 +18,7 @@
   <exec_depend>can-utils</exec_depend>
   <exec_depend>joy</exec_depend>
 
-	<export>
-  	<build_type>ament_cmake</build_type>
+  <export>
+    <build_type>ament_cmake</build_type>
   </export>
 </package>
