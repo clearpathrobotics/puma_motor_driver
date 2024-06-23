@@ -1,11 +1,10 @@
 <?xml version="1.0"?>
-<?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="2">
   <name>clearpath_socketcan_interface</name>
-  <version>0.8.2</version>
+  <version>0.3.1</version>
   <description>Clearpath's CAN interface description with helpers for filtering and driver implementation. Further a socketcan implementation based on boost::asio is included.</description>
 
-  <maintainer email="lcamero@clearpathrobotics.com">Mathias Lüdtke</maintainer>
+  <maintainer email="lcamero@clearpathrobotics.com">Luis Camero</maintainer>
 
   <license>LGPLv3</license>
 
