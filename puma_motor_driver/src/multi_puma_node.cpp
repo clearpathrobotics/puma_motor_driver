@@ -131,7 +131,6 @@ bool MultiPumaNode::getFeedback()
 
   if (received != (1 << FeedbackBit::Count) - 1)
   {
-    //RCLCPP_INFO(this->get_logger(), "Received Feedback %x", received);
     return false;
   }
 
@@ -170,7 +169,7 @@ bool MultiPumaNode::getStatus()
     received_fields |= driver.receivedFault() << StatusBit::Fault;
     if (received_fields != (1 << StatusBit::Count) - 1)
     {
-      //RCLCPP_INFO(this->get_logger(), "Received Status Fields %x", received_fields);
+      RCLCPP_DEBUG(this->get_logger(), "Received Status Fields %x", received_fields);
     }
     else
     {
@@ -181,7 +180,7 @@ bool MultiPumaNode::getStatus()
 
   if (received_status != (1 << status_index) - 1)
   {
-    //RCLCPP_INFO(this->get_logger(), "Received Status %x", received_status);
+    RCLCPP_DEBUG(this->get_logger(), "Received Status %x", received_status);
     return false;
   }
 
@@ -209,7 +208,6 @@ void MultiPumaNode::publishFeedback()
 {
   if (getFeedback())
   {
-    //RCLCPP_INFO(this->get_logger(), "MultiPumaNode::publishFeedback");
     feedback_pub_->publish(feedback_msg_);
   }
 }
@@ -218,14 +216,12 @@ void MultiPumaNode::publishStatus()
 {
   if (getStatus())
   {
-    //RCLCPP_INFO(this->get_logger(), "MultiPumaNode::publishStatus");
     status_pub_->publish(status_msg_);
   }
 }
 
 void MultiPumaNode::cmdCallback(const sensor_msgs::msg::JointState::SharedPtr msg)
 {
-  //RCLCPP_INFO(this->get_logger(), "MultiPumaNode::cmdCallback");
   if (active_)
   {
     for (auto& driver : drivers_)
@@ -240,7 +236,6 @@ void MultiPumaNode::cmdCallback(const sensor_msgs::msg::JointState::SharedPtr ms
           }
           else if (desired_mode_ == puma_motor_msgs::msg::Status::MODE_SPEED)
           {
-            //RCLCPP_INFO(this->get_logger(), "MultiPumaNode::cmdCallback %s : %f", msg->name[i].c_str(), msg->velocity[i]);
             driver.commandSpeed(msg->velocity[i]);
           }
         }
