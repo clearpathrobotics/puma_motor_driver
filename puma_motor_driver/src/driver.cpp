@@ -22,13 +22,15 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCL
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "puma_motor_driver/driver.h"
-#include "puma_motor_driver/gateway.h"
-#include "puma_motor_driver/message.h"
-#include "puma_motor_msgs/Status.h"
+#include "puma_motor_driver/driver.hpp"
+#include "puma_motor_driver/gateway.hpp"
+#include "puma_motor_driver/message.hpp"
+#include "puma_motor_msgs/msg/status.hpp"
 
 #include <string>
-#include <ros/ros.h>
+#include <cstring>
+#include <math.h>
+#include "rclcpp/rclcpp.hpp"
 
 namespace puma_motor_driver
 {
@@ -54,9 +56,9 @@ namespace ConfigurationStates
 }  // namespace ConfigurationStates
 typedef ConfigurationStates::ConfigurationState ConfigurationState;
 
-Driver::Driver(Gateway& gateway, const uint8_t& device_number, const std::string& device_name)
+Driver::Driver(const std::shared_ptr<puma_motor_driver::Gateway> gateway, const uint8_t& device_number, const std::string& device_name)
   : gateway_(gateway), device_number_(device_number), device_name_(device_name),
-    configured_(false), state_(ConfigurationState::Initializing), control_mode_(puma_motor_msgs::Status::MODE_SPEED),
+    configured_(false), state_(ConfigurationState::Initializing), control_mode_(puma_motor_msgs::msg::Status::MODE_SPEED),
     gain_p_(1), gain_i_(0), gain_d_(0), encoder_cpr_(1), gear_ratio_(1)
   {
   }
@@ -117,7 +119,7 @@ void Driver::sendUint8(const uint32_t id, const uint8_t value)
   msg.id = id;
   msg.len = 1;
   std::memcpy(msg.data, &value, msg.len);
-  gateway_.queue(msg);
+  gateway_->queue(msg);
 }
 
 void Driver::sendUint16(const uint32_t id, const uint16_t value)
@@ -126,7 +128,7 @@ void Driver::sendUint16(const uint32_t id, const uint16_t value)
   msg.id = id;
   msg.len = 2;
   std::memcpy(msg.data, &value, msg.len);
-  gateway_.queue(msg);
+  gateway_->queue(msg);
 }
 
 void Driver::sendFixed8x8(const uint32_t id, const float value)
@@ -136,7 +138,7 @@ void Driver::sendFixed8x8(const uint32_t id, const float value)
   msg.len = 2;
   int16_t output_value = static_cast<int16_t>(static_cast<float>(1<<8) * value);
   std::memcpy(msg.data, &output_value, msg.len);
-  gateway_.queue(msg);
+  gateway_->queue(msg);
 }
 
 void Driver::sendFixed16x16(const uint32_t id, const double value)
@@ -146,7 +148,7 @@ void Driver::sendFixed16x16(const uint32_t id, const double value)
   msg.len = 4;
   int32_t output_value = static_cast<int32_t>(static_cast<double>((1<<16) * value));
   std::memcpy(msg.data, &output_value, msg.len);
-  gateway_.queue(msg);
+  gateway_->queue(msg);
 }
 
 bool Driver::verifyRaw16x16(const uint8_t* received, const double expected)
@@ -207,7 +209,7 @@ void Driver::verifyParams()
   switch (state_)
   {
     case ConfigurationState::Initializing:
-      ROS_INFO("Puma Motor Controller on %s (%i): starting to verify parameters.",
+      RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Puma Motor Controller on %s (%i): starting to verify parameters.",
           device_name_.c_str(), device_number_);
       state_ = ConfigurationState::PowerFlag;
       break;
@@ -215,74 +217,74 @@ void Driver::verifyParams()
       if (lastPower() == 0)
       {
         state_ = ConfigurationState::EncoderPosRef;
-        ROS_INFO("Puma Motor Controller on %s (%i): cleared power flag.", device_name_.c_str(), device_number_);
+        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Puma Motor Controller on %s (%i): cleared power flag.", device_name_.c_str(), device_number_);
       }
       else
       {
-        gateway_.queue(Message(LM_API_STATUS_POWER | device_number_));
+        gateway_->queue(Message(LM_API_STATUS_POWER | device_number_));
       }
       break;
     case ConfigurationState::EncoderPosRef:
       if (posEncoderRef() == LM_REF_ENCODER)
       {
         state_ = ConfigurationState::EncoderSpdRef;
-        ROS_INFO("Puma Motor Controller on %s (%i): set position encoder reference.",
+        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Puma Motor Controller on %s (%i): set position encoder reference.",
             device_name_.c_str(), device_number_);
       }
       else
       {
-        gateway_.queue(Message(LM_API_POS_REF | device_number_));
+        gateway_->queue(Message(LM_API_POS_REF | device_number_));
       }
       break;
     case ConfigurationState::EncoderSpdRef:
       if (spdEncoderRef() == LM_REF_QUAD_ENCODER)
       {
         state_ = ConfigurationState::EncoderCounts;
-        ROS_INFO("Puma Motor Controller on %s (%i): set speed encoder reference.",
+        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Puma Motor Controller on %s (%i): set speed encoder reference.",
             device_name_.c_str(), device_number_);
       }
       else
       {
-        gateway_.queue(Message(LM_API_SPD_REF | device_number_));
+        gateway_->queue(Message(LM_API_SPD_REF | device_number_));
       }
       break;
     case ConfigurationState::EncoderCounts:
       if (encoderCounts() == encoder_cpr_)
       {
         state_ = ConfigurationState::ClosedLoop;
-        ROS_INFO("Puma Motor Controller on %s (%i): set encoder counts to %i.",
+        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Puma Motor Controller on %s (%i): set encoder counts to %i.",
             device_name_.c_str(), device_number_, encoder_cpr_);
       }
       else
       {
-        gateway_.queue(Message(LM_API_CFG_ENC_LINES | device_number_));
+        gateway_->queue(Message(LM_API_CFG_ENC_LINES | device_number_));
       }
       break;
     case ConfigurationState::ClosedLoop:  // Need to enter a close loop mode to record encoder data.
-      if (lastMode() == puma_motor_msgs::Status::MODE_SPEED)
+      if (lastMode() == puma_motor_msgs::msg::Status::MODE_SPEED)
       {
         state_ = ConfigurationState::ControlMode;
-        ROS_INFO("Puma Motor Controller on %s (%i): entered a close-loop control mode.",
+        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Puma Motor Controller on %s (%i): entered a close-loop control mode.",
             device_name_.c_str(), device_number_);
       }
       else
       {
-        gateway_.queue(Message(LM_API_STATUS_CMODE | device_number_));
+        gateway_->queue(Message(LM_API_STATUS_CMODE | device_number_));
       }
       break;
     case ConfigurationState::ControlMode:
       if (lastMode() == control_mode_)
       {
-        if (control_mode_ != puma_motor_msgs::Status::MODE_VOLTAGE)
+        if (control_mode_ != puma_motor_msgs::msg::Status::MODE_VOLTAGE)
         {
           state_ = ConfigurationState::PGain;
-          ROS_INFO("Puma Motor Controller on %s (%i): was set to a close loop control mode.",
+          RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Puma Motor Controller on %s (%i): was set to a close loop control mode.",
               device_name_.c_str(), device_number_);
         }
         else
         {
           state_ = ConfigurationState::VerifiedParameters;
-          ROS_INFO("Puma Motor Controller on %s (%i): was set to voltage control mode.",
+          RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Puma Motor Controller on %s (%i): was set to voltage control mode.",
               device_name_.c_str(), device_number_);
         }
       }
@@ -291,21 +293,21 @@ void Driver::verifyParams()
       if (verifyRaw16x16(getRawP(), gain_p_))
       {
         state_ = ConfigurationState::IGain;
-        ROS_INFO("Puma Motor Controller on %s (%i): P gain constant was set to %f and %f was requested.",
+        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Puma Motor Controller on %s (%i): P gain constant was set to %f and %f was requested.",
             device_name_.c_str(), device_number_, getP(), gain_p_);
       }
       else
       {
         switch (control_mode_)
         {
-          case puma_motor_msgs::Status::MODE_CURRENT:
-            gateway_.queue(Message(LM_API_ICTRL_PC | device_number_));
+          case puma_motor_msgs::msg::Status::MODE_CURRENT:
+            gateway_->queue(Message(LM_API_ICTRL_PC | device_number_));
             break;
-          case puma_motor_msgs::Status::MODE_POSITION:
-            gateway_.queue(Message(LM_API_POS_PC | device_number_));
+          case puma_motor_msgs::msg::Status::MODE_POSITION:
+            gateway_->queue(Message(LM_API_POS_PC | device_number_));
             break;
-          case puma_motor_msgs::Status::MODE_SPEED:
-            gateway_.queue(Message(LM_API_SPD_PC | device_number_));
+          case puma_motor_msgs::msg::Status::MODE_SPEED:
+            gateway_->queue(Message(LM_API_SPD_PC | device_number_));
             break;
         }
       }
@@ -314,23 +316,23 @@ void Driver::verifyParams()
       if (verifyRaw16x16(getRawI(), gain_i_))
       {
         state_ = ConfigurationState::DGain;
-        ROS_INFO("Puma Motor Controller on %s (%i): I gain constant was set to %f and %f was requested.",
+        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Puma Motor Controller on %s (%i): I gain constant was set to %f and %f was requested.",
             device_name_.c_str(), device_number_, getI(), gain_i_);
       }
       else
       {
-        ROS_WARN("Puma Motor Controller on %s (%i): I gain constant was set to %f and %f was requested.",
+        RCLCPP_WARN(rclcpp::get_logger("rclcpp"), "Puma Motor Controller on %s (%i): I gain constant was set to %f and %f was requested.",
            device_name_.c_str(), device_number_, getI(), gain_i_);
         switch (control_mode_)
         {
-          case puma_motor_msgs::Status::MODE_CURRENT:
-            gateway_.queue(Message(LM_API_ICTRL_IC | device_number_));
+          case puma_motor_msgs::msg::Status::MODE_CURRENT:
+            gateway_->queue(Message(LM_API_ICTRL_IC | device_number_));
             break;
-          case puma_motor_msgs::Status::MODE_POSITION:
-            gateway_.queue(Message(LM_API_POS_IC | device_number_));
+          case puma_motor_msgs::msg::Status::MODE_POSITION:
+            gateway_->queue(Message(LM_API_POS_IC | device_number_));
             break;
-          case puma_motor_msgs::Status::MODE_SPEED:
-            gateway_.queue(Message(LM_API_SPD_IC | device_number_));
+          case puma_motor_msgs::msg::Status::MODE_SPEED:
+            gateway_->queue(Message(LM_API_SPD_IC | device_number_));
             break;
         }
       }
@@ -339,21 +341,21 @@ void Driver::verifyParams()
       if (verifyRaw16x16(getRawD(), gain_d_))
       {
         state_ = ConfigurationState::VerifiedParameters;
-        ROS_INFO("Puma Motor Controller on %s (%i): D gain constant was set to %f and %f was requested.",
+        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Puma Motor Controller on %s (%i): D gain constant was set to %f and %f was requested.",
             device_name_.c_str(), device_number_, getD(), gain_d_);
       }
       else
       {
         switch (control_mode_)
         {
-          case puma_motor_msgs::Status::MODE_CURRENT:
-            gateway_.queue(Message(LM_API_ICTRL_DC | device_number_));
+          case puma_motor_msgs::msg::Status::MODE_CURRENT:
+            gateway_->queue(Message(LM_API_ICTRL_DC | device_number_));
             break;
-          case puma_motor_msgs::Status::MODE_POSITION:
-            gateway_.queue(Message(LM_API_POS_DC | device_number_));
+          case puma_motor_msgs::msg::Status::MODE_POSITION:
+            gateway_->queue(Message(LM_API_POS_DC | device_number_));
             break;
-          case puma_motor_msgs::Status::MODE_SPEED:
-            gateway_.queue(Message(LM_API_SPD_DC | device_number_));
+          case puma_motor_msgs::msg::Status::MODE_SPEED:
+            gateway_->queue(Message(LM_API_SPD_DC | device_number_));
             break;
         }
       }
@@ -361,7 +363,7 @@ void Driver::verifyParams()
   }
   if (state_ == ConfigurationState::VerifiedParameters)
   {
-    ROS_INFO("Puma Motor Controller on %s (%i): all parameters verified.", device_name_.c_str(), device_number_);
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Puma Motor Controller on %s (%i): all parameters verified.", device_name_.c_str(), device_number_);
     configured_ = true;
     state_ = ConfigurationState::Configured;
   }
@@ -385,22 +387,22 @@ void Driver::configureParams()
       sendUint16((LM_API_CFG_ENC_LINES | device_number_), encoder_cpr_);
       break;
     case ConfigurationState::ClosedLoop:  // Need to enter a close loop mode to record encoder data.
-      gateway_.queue(Message(LM_API_SPD_EN | device_number_));
+      gateway_->queue(Message(LM_API_SPD_EN | device_number_));
       break;
     case ConfigurationState::ControlMode:
       switch (control_mode_)
       {
-        case puma_motor_msgs::Status::MODE_VOLTAGE:
-          gateway_.queue(Message(LM_API_VOLT_EN | device_number_));
+        case puma_motor_msgs::msg::Status::MODE_VOLTAGE:
+          gateway_->queue(Message(LM_API_VOLT_EN | device_number_));
           break;
-        case puma_motor_msgs::Status::MODE_CURRENT:
-          gateway_.queue(Message(LM_API_ICTRL_EN | device_number_));
+        case puma_motor_msgs::msg::Status::MODE_CURRENT:
+          gateway_->queue(Message(LM_API_ICTRL_EN | device_number_));
           break;
-        case puma_motor_msgs::Status::MODE_POSITION:
-          gateway_.queue(Message(LM_API_POS_EN | device_number_));
+        case puma_motor_msgs::msg::Status::MODE_POSITION:
+          gateway_->queue(Message(LM_API_POS_EN | device_number_));
           break;
-        case puma_motor_msgs::Status::MODE_SPEED:
-          gateway_.queue(Message(LM_API_SPD_EN | device_number_));
+        case puma_motor_msgs::msg::Status::MODE_SPEED:
+          gateway_->queue(Message(LM_API_SPD_EN | device_number_));
           break;
       }
       break;
@@ -408,13 +410,13 @@ void Driver::configureParams()
       // Set P
       switch (control_mode_)
       {
-        case puma_motor_msgs::Status::MODE_CURRENT:
+        case puma_motor_msgs::msg::Status::MODE_CURRENT:
           sendFixed16x16((LM_API_ICTRL_PC  | device_number_), gain_p_);
           break;
-        case puma_motor_msgs::Status::MODE_POSITION:
+        case puma_motor_msgs::msg::Status::MODE_POSITION:
           sendFixed16x16((LM_API_POS_PC  | device_number_), gain_p_);
           break;
-        case puma_motor_msgs::Status::MODE_SPEED:
+        case puma_motor_msgs::msg::Status::MODE_SPEED:
           sendFixed16x16((LM_API_SPD_PC  | device_number_), gain_p_);
           break;
       }
@@ -423,13 +425,13 @@ void Driver::configureParams()
       // Set I
       switch (control_mode_)
       {
-        case puma_motor_msgs::Status::MODE_CURRENT:
+        case puma_motor_msgs::msg::Status::MODE_CURRENT:
           sendFixed16x16((LM_API_ICTRL_IC  | device_number_), gain_i_);
           break;
-        case puma_motor_msgs::Status::MODE_POSITION:
+        case puma_motor_msgs::msg::Status::MODE_POSITION:
           sendFixed16x16((LM_API_POS_IC  | device_number_), gain_i_);
           break;
-        case puma_motor_msgs::Status::MODE_SPEED:
+        case puma_motor_msgs::msg::Status::MODE_SPEED:
           sendFixed16x16((LM_API_SPD_IC  | device_number_), gain_i_);
           break;
       }
@@ -438,13 +440,13 @@ void Driver::configureParams()
       // Set D
       switch (control_mode_)
       {
-        case puma_motor_msgs::Status::MODE_CURRENT:
+        case puma_motor_msgs::msg::Status::MODE_CURRENT:
           sendFixed16x16((LM_API_ICTRL_DC  | device_number_), gain_d_);
           break;
-        case puma_motor_msgs::Status::MODE_POSITION:
+        case puma_motor_msgs::msg::Status::MODE_POSITION:
           sendFixed16x16((LM_API_POS_DC  | device_number_), gain_d_);
           break;
-        case puma_motor_msgs::Status::MODE_SPEED:
+        case puma_motor_msgs::msg::Status::MODE_SPEED:
           sendFixed16x16((LM_API_SPD_DC  | device_number_), gain_d_);
           break;
       }
@@ -471,10 +473,10 @@ void Driver::setGains(const double p, const double i, const double d)
 
 void Driver::setMode(const uint8_t mode)
 {
-  if (mode == puma_motor_msgs::Status::MODE_VOLTAGE)
+  if (mode == puma_motor_msgs::msg::Status::MODE_VOLTAGE)
   {
     control_mode_ = mode;
-    ROS_INFO("Puma Motor Controller on %s (%i): mode set to voltage control.", device_name_.c_str(), device_number_);
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Puma Motor Controller on %s (%i): mode set to voltage control.", device_name_.c_str(), device_number_);
     if (configured_)
     {
       resetConfiguration();
@@ -482,17 +484,17 @@ void Driver::setMode(const uint8_t mode)
   }
   else
   {
-    ROS_ERROR("Puma Motor Controller on %s (%i): Close loop modes need PID gains.",
+    RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Puma Motor Controller on %s (%i): Close loop modes need PID gains.",
         device_name_.c_str(), device_number_);
   }
 }
 
 void Driver::setMode(const uint8_t mode, const double p, const double i, const double d)
 {
-  if (mode == puma_motor_msgs::Status::MODE_VOLTAGE)
+  if (mode == puma_motor_msgs::msg::Status::MODE_VOLTAGE)
   {
     control_mode_ = mode;
-    ROS_WARN("Puma Motor Controller on %s (%i): mode set to voltage control but PID gains are not needed.",
+    RCLCPP_WARN(rclcpp::get_logger("rclcpp"), "Puma Motor Controller on %s (%i): mode set to voltage control but PID gains are not needed.",
         device_name_.c_str(), device_number_);
     if (configured_)
     {
@@ -507,7 +509,7 @@ void Driver::setMode(const uint8_t mode, const double p, const double i, const d
       resetConfiguration();
     }
     setGains(p, i, d);
-    ROS_INFO(
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"),
         "Puma Motor Controller on %s (%i): mode set to a closed-loop control with PID gains of P:%f, I:%f and D:%f.",
         device_name_.c_str(), device_number_, gain_p_, gain_i_, gain_d_);
   }
@@ -528,57 +530,57 @@ void Driver::clearMsgCache()
 
 void Driver::requestStatusMessages()
 {
-  gateway_.queue(Message(LM_API_STATUS_POWER   | device_number_));
+  gateway_->queue(Message(LM_API_STATUS_POWER   | device_number_));
 }
 
 void Driver::requestFeedbackMessages()
 {
-  gateway_.queue(Message(LM_API_STATUS_VOLTOUT | device_number_));
-  gateway_.queue(Message(LM_API_STATUS_CURRENT | device_number_));
-  gateway_.queue(Message(LM_API_STATUS_POS     | device_number_));
-  gateway_.queue(Message(LM_API_STATUS_SPD     | device_number_));
-  gateway_.queue(Message(LM_API_SPD_SET        | device_number_));
+  gateway_->queue(Message(LM_API_STATUS_VOLTOUT | device_number_));
+  gateway_->queue(Message(LM_API_STATUS_CURRENT | device_number_));
+  gateway_->queue(Message(LM_API_STATUS_POS     | device_number_));
+  gateway_->queue(Message(LM_API_STATUS_SPD     | device_number_));
+  gateway_->queue(Message(LM_API_SPD_SET        | device_number_));
 }
 void Driver::requestFeedbackDutyCycle()
 {
-  gateway_.queue(Message(LM_API_STATUS_VOLTOUT | device_number_));
+  gateway_->queue(Message(LM_API_STATUS_VOLTOUT | device_number_));
 }
 
 void Driver::requestFeedbackCurrent()
 {
-  gateway_.queue(Message(LM_API_STATUS_CURRENT | device_number_));
+  gateway_->queue(Message(LM_API_STATUS_CURRENT | device_number_));
 }
 
 void Driver::requestFeedbackPosition()
 {
-  gateway_.queue(Message(LM_API_STATUS_POS | device_number_));
+  gateway_->queue(Message(LM_API_STATUS_POS | device_number_));
 }
 
 void Driver::requestFeedbackSpeed()
 {
-  gateway_.queue(Message(LM_API_STATUS_SPD | device_number_));
+  gateway_->queue(Message(LM_API_STATUS_SPD | device_number_));
 }
 
 void Driver::requestFeedbackPowerState()
 {
-  gateway_.queue(Message(LM_API_STATUS_POWER | device_number_));
+  gateway_->queue(Message(LM_API_STATUS_POWER | device_number_));
 }
 
 void Driver::requestFeedbackSetpoint()
 {
   switch (control_mode_)
   {
-    case puma_motor_msgs::Status::MODE_CURRENT:
-      gateway_.queue(Message(LM_API_ICTRL_SET | device_number_));
+    case puma_motor_msgs::msg::Status::MODE_CURRENT:
+      gateway_->queue(Message(LM_API_ICTRL_SET | device_number_));
       break;
-    case puma_motor_msgs::Status::MODE_POSITION:
-      gateway_.queue(Message(LM_API_POS_SET | device_number_));
+    case puma_motor_msgs::msg::Status::MODE_POSITION:
+      gateway_->queue(Message(LM_API_POS_SET | device_number_));
       break;
-    case puma_motor_msgs::Status::MODE_SPEED:
-      gateway_.queue(Message(LM_API_SPD_SET | device_number_));
+    case puma_motor_msgs::msg::Status::MODE_SPEED:
+      gateway_->queue(Message(LM_API_SPD_SET | device_number_));
       break;
-    case puma_motor_msgs::Status::MODE_VOLTAGE:
-      gateway_.queue(Message(LM_API_VOLT_SET | device_number_));
+    case puma_motor_msgs::msg::Status::MODE_VOLTAGE:
+      gateway_->queue(Message(LM_API_VOLT_SET | device_number_));
       break;
   };
 }
@@ -595,69 +597,192 @@ void Driver::updateGains()
   state_ = ConfigurationState::PGain;
 }
 
+bool Driver::receivedDutyCycle()
+{
+  Field* field = statusFieldForMessage(Message(LM_API_STATUS_VOLTOUT));
+  return field->received;
+}
+
+bool Driver::receivedBusVoltage()
+{
+  Field* field = statusFieldForMessage(Message(LM_API_STATUS_VOLTBUS));
+  return field->received;
+}
+
+bool Driver::receivedCurrent()
+{
+  Field* field = statusFieldForMessage(Message(LM_API_STATUS_CURRENT));
+  return field->received;
+}
+
+bool Driver::receivedPosition()
+{
+  Field* field = statusFieldForMessage(Message(LM_API_STATUS_POS));
+  return field->received;
+}
+
+bool Driver::receivedSpeed()
+{
+  Field* field = statusFieldForMessage(Message(LM_API_STATUS_SPD));
+  return field->received;
+}
+
+bool Driver::receivedFault()
+{
+  Field* field = statusFieldForMessage(Message(LM_API_STATUS_FAULT));
+  return field->received;
+}
+
+bool Driver::receivedPower()
+{
+  Field* field = statusFieldForMessage(Message(LM_API_STATUS_POWER));
+  return field->received;
+}
+
+bool Driver::receivedMode()
+{
+  Field* field = statusFieldForMessage(Message(LM_API_STATUS_CMODE));
+  return field->received;
+}
+
+bool Driver::receivedOutVoltage()
+{
+  Field* field = statusFieldForMessage(Message(LM_API_STATUS_VOUT));
+  return field->received;
+}
+
+bool Driver::receivedTemperature()
+{
+  Field* field = statusFieldForMessage(Message(LM_API_STATUS_TEMP));
+  return field->received;
+}
+
+bool Driver::receivedAnalogInput()
+{
+  Field* field = statusFieldForMessage(Message(CPR_API_STATUS_ANALOG));
+  return field->received;
+}
+
+bool Driver::receivedSetpoint()
+{
+  switch (control_mode_)
+  {
+    case puma_motor_msgs::msg::Status::MODE_CURRENT:
+      return receivedCurrentSetpoint();
+      break;
+    case puma_motor_msgs::msg::Status::MODE_POSITION:
+      return receivedPositionSetpoint();
+      break;
+    case puma_motor_msgs::msg::Status::MODE_SPEED:
+      return receivedSpeedSetpoint();
+      break;
+    case puma_motor_msgs::msg::Status::MODE_VOLTAGE:
+      return receivedDutyCycleSetpoint();
+      break;
+    default:
+      return 0;
+      break;
+  }
+}
+
+bool Driver::receivedSpeedSetpoint()
+{
+  Field* field = spdFieldForMessage(Message(LM_API_SPD_SET));
+  return field->received;
+}
+
+bool Driver::receivedDutyCycleSetpoint()
+{
+  Field* field = voltageFieldForMessage(Message(LM_API_VOLT_SET));
+  return field->received;
+}
+
+bool Driver::receivedCurrentSetpoint()
+{
+  Field* field = ictrlFieldForMessage(Message(LM_API_ICTRL_SET));
+  return field->received;
+}
+
+bool Driver::receivedPositionSetpoint()
+{
+  Field* field = posFieldForMessage(Message(LM_API_POS_SET));
+  return field->received;
+}
+
 float Driver::lastDutyCycle()
 {
   Field* field = statusFieldForMessage(Message(LM_API_STATUS_VOLTOUT));
+  field->received = false;
   return (field->interpretFixed8x8() / 128.0);
 }
 
 float Driver::lastBusVoltage()
 {
   Field* field = statusFieldForMessage(Message(LM_API_STATUS_VOLTBUS));
+  field->received = false;
   return field->interpretFixed8x8();
 }
 
 float Driver::lastCurrent()
 {
   Field* field = statusFieldForMessage(Message(LM_API_STATUS_CURRENT));
+  field->received = false;
   return field->interpretFixed8x8();
 }
 
 double Driver::lastPosition()
 {
   Field* field = statusFieldForMessage(Message(LM_API_STATUS_POS));
+  field->received = false;
   return (field->interpretFixed16x16() * ((2 * M_PI) / gear_ratio_));  // Convert rev to rad
 }
 
 double Driver::lastSpeed()
 {
   Field* field = statusFieldForMessage(Message(LM_API_STATUS_SPD));
+  field->received = false;
   return (field->interpretFixed16x16() * ((2 * M_PI) / (gear_ratio_ * 60)));  // Convert RPM to rad/s
 }
 
 uint8_t Driver::lastFault()
 {
   Field* field = statusFieldForMessage(Message(LM_API_STATUS_FAULT));
+  field->received = false;
   return field->data[0];
 }
 
 uint8_t Driver::lastPower()
 {
   Field* field = statusFieldForMessage(Message(LM_API_STATUS_POWER));
+  field->received = false;
   return field->data[0];
 }
 
 uint8_t Driver::lastMode()
 {
   Field* field = statusFieldForMessage(Message(LM_API_STATUS_CMODE));
+  field->received = false;
   return field->data[0];
 }
 
 float Driver::lastOutVoltage()
 {
   Field* field = statusFieldForMessage(Message(LM_API_STATUS_VOUT));
+  field->received = false;
   return field->interpretFixed8x8();
 }
 
 float Driver::lastTemperature()
 {
   Field* field = statusFieldForMessage(Message(LM_API_STATUS_TEMP));
+  field->received = false;
   return field->interpretFixed8x8();
 }
 
 float Driver::lastAnalogInput()
 {
   Field* field = statusFieldForMessage(Message(CPR_API_STATUS_ANALOG));
+  field->received = false;
   return field->interpretFixed8x8();
 }
 
@@ -665,16 +790,16 @@ double Driver::lastSetpoint()
 {
   switch (control_mode_)
   {
-    case puma_motor_msgs::Status::MODE_CURRENT:
+    case puma_motor_msgs::msg::Status::MODE_CURRENT:
       return statusCurrentGet();
       break;
-    case puma_motor_msgs::Status::MODE_POSITION:
+    case puma_motor_msgs::msg::Status::MODE_POSITION:
       return statusPositionGet();
       break;
-    case puma_motor_msgs::Status::MODE_SPEED:
+    case puma_motor_msgs::msg::Status::MODE_SPEED:
       return statusSpeedGet();
       break;
-    case puma_motor_msgs::Status::MODE_VOLTAGE:
+    case puma_motor_msgs::msg::Status::MODE_VOLTAGE:
       return statusDutyCycleGet();
       break;
     default:
@@ -685,23 +810,28 @@ double Driver::lastSetpoint()
 double Driver::statusSpeedGet()
 {
   Field* field = spdFieldForMessage(Message(LM_API_SPD_SET));
+  field->received = false;
   return (field->interpretFixed16x16() * ((2 * M_PI) / (gear_ratio_ * 60)));  // Convert RPM to rad/s
 }
 
 float Driver::statusDutyCycleGet()
 {
   Field* field = voltageFieldForMessage(Message(LM_API_VOLT_SET));
+  field->received = false;
   return (field->interpretFixed8x8() / 128.0);
 }
 
 float Driver::statusCurrentGet()
 {
   Field* field = ictrlFieldForMessage(Message(LM_API_ICTRL_SET));
+  field->received = false;
   return field->interpretFixed8x8();
 }
+
 double Driver::statusPositionGet()
 {
   Field* field = posFieldForMessage(Message(LM_API_POS_SET));
+  field->received = false;
   return (field->interpretFixed16x16() * (( 2 * M_PI) / gear_ratio_));  // Convert rev to rad
 }
 
@@ -728,13 +858,13 @@ double Driver::getP()
   Field* field;
   switch (control_mode_)
   {
-    case puma_motor_msgs::Status::MODE_CURRENT:
+    case puma_motor_msgs::msg::Status::MODE_CURRENT:
       field = ictrlFieldForMessage(Message(LM_API_ICTRL_PC));
       break;
-    case puma_motor_msgs::Status::MODE_POSITION:
+    case puma_motor_msgs::msg::Status::MODE_POSITION:
       field = posFieldForMessage(Message(LM_API_POS_PC));
       break;
-    case puma_motor_msgs::Status::MODE_SPEED:
+    case puma_motor_msgs::msg::Status::MODE_SPEED:
       field = spdFieldForMessage(Message(LM_API_SPD_PC));
       break;
   };
@@ -746,13 +876,13 @@ double Driver::getI()
   Field* field;
   switch (control_mode_)
   {
-    case puma_motor_msgs::Status::MODE_CURRENT:
+    case puma_motor_msgs::msg::Status::MODE_CURRENT:
       field = ictrlFieldForMessage(Message(LM_API_ICTRL_IC));
       break;
-    case puma_motor_msgs::Status::MODE_POSITION:
+    case puma_motor_msgs::msg::Status::MODE_POSITION:
       field = posFieldForMessage(Message(LM_API_POS_IC));
       break;
-    case puma_motor_msgs::Status::MODE_SPEED:
+    case puma_motor_msgs::msg::Status::MODE_SPEED:
       field = spdFieldForMessage(Message(LM_API_SPD_IC));
       break;
   };
@@ -764,13 +894,13 @@ double Driver::getD()
   Field* field;
   switch (control_mode_)
   {
-    case puma_motor_msgs::Status::MODE_CURRENT:
+    case puma_motor_msgs::msg::Status::MODE_CURRENT:
       field = ictrlFieldForMessage(Message(LM_API_ICTRL_DC));
       break;
-    case puma_motor_msgs::Status::MODE_POSITION:
+    case puma_motor_msgs::msg::Status::MODE_POSITION:
       field = posFieldForMessage(Message(LM_API_POS_DC));
       break;
-    case puma_motor_msgs::Status::MODE_SPEED:
+    case puma_motor_msgs::msg::Status::MODE_SPEED:
       field = spdFieldForMessage(Message(LM_API_SPD_DC));
       break;
   };
@@ -782,13 +912,13 @@ uint8_t* Driver::getRawP()
   Field* field;
   switch (control_mode_)
   {
-    case puma_motor_msgs::Status::MODE_CURRENT:
+    case puma_motor_msgs::msg::Status::MODE_CURRENT:
       field = ictrlFieldForMessage(Message(LM_API_ICTRL_PC));
       break;
-    case puma_motor_msgs::Status::MODE_POSITION:
+    case puma_motor_msgs::msg::Status::MODE_POSITION:
       field = posFieldForMessage(Message(LM_API_POS_PC));
       break;
-    case puma_motor_msgs::Status::MODE_SPEED:
+    case puma_motor_msgs::msg::Status::MODE_SPEED:
       field = spdFieldForMessage(Message(LM_API_SPD_PC));
       break;
   };
@@ -800,13 +930,13 @@ uint8_t* Driver::getRawI()
   Field* field;
   switch (control_mode_)
   {
-    case puma_motor_msgs::Status::MODE_CURRENT:
+    case puma_motor_msgs::msg::Status::MODE_CURRENT:
       field = ictrlFieldForMessage(Message(LM_API_ICTRL_IC));
       break;
-    case puma_motor_msgs::Status::MODE_POSITION:
+    case puma_motor_msgs::msg::Status::MODE_POSITION:
       field = posFieldForMessage(Message(LM_API_POS_IC));
       break;
-    case puma_motor_msgs::Status::MODE_SPEED:
+    case puma_motor_msgs::msg::Status::MODE_SPEED:
       field = spdFieldForMessage(Message(LM_API_SPD_IC));
       break;
   };
@@ -818,13 +948,13 @@ uint8_t* Driver::getRawD()
   Field* field;
   switch (control_mode_)
   {
-    case puma_motor_msgs::Status::MODE_CURRENT:
+    case puma_motor_msgs::msg::Status::MODE_CURRENT:
       field = ictrlFieldForMessage(Message(LM_API_ICTRL_DC));
       break;
-    case puma_motor_msgs::Status::MODE_POSITION:
+    case puma_motor_msgs::msg::Status::MODE_POSITION:
       field = posFieldForMessage(Message(LM_API_POS_DC));
       break;
-    case puma_motor_msgs::Status::MODE_SPEED:
+    case puma_motor_msgs::msg::Status::MODE_SPEED:
       field = spdFieldForMessage(Message(LM_API_SPD_DC));
       break;
   };

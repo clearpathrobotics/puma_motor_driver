@@ -1,0 +1,8 @@
+<library path="clearpath_socketcan_interface_plugin">
+  <class
+    name="clearpath_socketcan_interface/SocketCANInterface"
+    type="can::SocketCANInterface"
+    base_class_type="can::DriverInterface">
+    <description>SocketCAN inteface plugin.</description>
+  </class>
+</library>

@@ -1,77 +1,98 @@
-cmake_minimum_required(VERSION 2.8.3)
+################################################################################
+# Set minimum required version of cmake, project name and compile options
+################################################################################
+cmake_minimum_required(VERSION 3.5)
 project(puma_motor_driver)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+if (NOT CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 14)
+endif ()
+if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    add_compile_options(-Wall -Wextra -Wpedantic -fPIC)
+endif ()
 
-find_package(catkin REQUIRED COMPONENTS
-  diagnostic_updater
-  puma_motor_msgs
-  roscpp
-  sensor_msgs
-  serial
-)
+################################################################################
+# Find ament packages and libraries for ament and system dependencies
+################################################################################
+find_package(ament_cmake REQUIRED)
+find_package(diagnostic_updater REQUIRED)
+find_package(puma_motor_msgs REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+#find_package(serial_driver REQUIRED)
+find_package(clearpath_socketcan_interface REQUIRED)
 
-catkin_package(
-  INCLUDE_DIRS include
-  LIBRARIES puma_motor_driver
-  CATKIN_DEPENDS diagnostic_updater puma_motor_msgs roscpp sensor_msgs serial
-)
+################################################################################
+# Build
+################################################################################
+
+################## Boost Settings ##################
+set(Boost_USE_STATIC_LIBS OFF)
+set(Boost_USE_MULTITHREADED ON)
+set(Boost_USE_STATIC_RUNTIME OFF)
+find_package(Boost REQUIRED)
+####################################################
 
 include_directories(
   include
-  ${catkin_INCLUDE_DIRS}
+  ${Boost_INCLUDE_DIRS}
 )
 
-add_library(puma_motor_driver
+ament_export_include_directories(include)
+
+add_library(puma_motor_driver SHARED
   src/driver.cpp
-  #src/serial_gateway.cpp
+  # src/serial_gateway.cpp
   src/socketcan_gateway.cpp
-  src/multi_driver_node.cpp
-  src/diagnostic_updater.cpp
+  # src/diagnostic_updater.cpp
 )
 
-target_link_libraries(puma_motor_driver
-  ${catkin_LIBRARIES}
-)
-add_dependencies(puma_motor_driver puma_motor_msgs_gencpp)
+target_link_libraries(puma_motor_driver ${Boost_LIBRARIES})
 
-add_executable(puma_multi_controller_node src/multi_controller_node.cpp)
-
-target_link_libraries(puma_multi_controller_node
-  puma_motor_driver
-  ${catkin_LIBRARIES}
-)
-
-# Mark executables and/or libraries for installation
-install(TARGETS puma_motor_driver puma_multi_controller_node
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+set(DEPENDENCIES
+  ament_cmake
+  diagnostic_updater
+  puma_motor_msgs
+  rclcpp
+  std_msgs
+  sensor_msgs
+  # serial_driver
+  clearpath_socketcan_interface
 )
 
-# Mark cpp header files for installation
+
+ament_target_dependencies(puma_motor_driver ${DEPENDENCIES})
+ament_export_libraries(puma_motor_driver)
+
+add_executable(multi_puma_node src/multi_puma_node.cpp
+  src/driver.cpp
+  src/socketcan_gateway
+)
+ament_target_dependencies(multi_puma_node ${DEPENDENCIES})
+target_link_libraries(multi_puma_node ${Boost_LIBRARIES})
+
+################################################################################
+# Install
+################################################################################
+install(TARGETS multi_puma_node
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+install(TARGETS puma_motor_driver
+  EXPORT export_${PROJECT_NAME}
+  DESTINATION lib)
+
+install(
+  DIRECTORY launch config
+  DESTINATION share/${PROJECT_NAME}
+)
+
 install(DIRECTORY include/${PROJECT_NAME}/
-  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-)
+  DESTINATION include/${PROJECT_NAME})
 
-if(CATKIN_ENABLE_TESTING)
-  find_package(roslint REQUIRED)
-  file(GLOB LINT_SRCS
-    src/*.cpp
-    include/puma_motor_driver/driver.h
-    include/puma_motor_driver/gateway.h
-    include/puma_motor_driver/message.h
-    #include/puma_motor_driver/serial_gateway.h
-    include/puma_motor_driver/socketcan_gateway.h
-    include/puma_motor_driver/multi_driver_node.h
-    include/puma_motor_driver/diagnostic_updater.h
-    test/*.cpp)
-  roslint_cpp(${LINT_SRCS})
-  roslint_add_test()
+################################################################################
+# Macro for ament package
+################################################################################
+ament_package()
 
-  find_package(roslaunch REQUIRED)
-  roslaunch_add_file_check(launch/mecanum.launch)
-  roslaunch_add_file_check(launch/omni.launch)
-
-  catkin_add_gtest(fixed_point_test test/fixed_point_test.cpp)
-endif()

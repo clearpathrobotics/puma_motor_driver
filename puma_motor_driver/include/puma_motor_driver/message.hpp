@@ -21,59 +21,38 @@ OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTE
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+#ifndef PUMA_MOTOR_DRIVER_MESSAGE_H
+#define PUMA_MOTOR_DRIVER_MESSAGE_H
 
-#ifndef PUMA_MOTOR_DRIVER_SOCKETCAN_GATEWAY_H
-#define PUMA_MOTOR_DRIVER_SOCKETCAN_GATEWAY_H
+#include "puma_motor_driver/can_proto.hpp"
 
-#include <mutex>  // NOLINT(build/c++11)
-#include <string>
-#include <stdio.h>
-#include <queue>
-#include <thread>  // NOLINT(build/c++11)
-#include <unistd.h>
+#include <stdint.h>
 
-#include <socketcan_interface/socketcan.h>
-#include <socketcan_interface/threading.h>
-
-#include "puma_motor_driver/gateway.h"
-#include "puma_motor_driver/message.h"
 
 namespace puma_motor_driver
 {
 
-class SocketCANGateway : public Gateway
+struct Message
 {
-public:
-  explicit SocketCANGateway(const std::string& canbus_dev);
-  ~SocketCANGateway();
+  uint8_t data[8];
+  uint32_t id;
+  uint8_t len;
 
-  bool connect() override;
-  bool isConnected() const override;
+  explicit Message(uint32_t id = 0) : id(id), len(0)
+  {
+  }
 
-  void process();
-  bool recv(Message* msg) override;
-  void queue(const Message& msg) override;
+  uint32_t getDeviceNumber() const
+  {
+    return id & CAN_MSGID_DEVNO_M;
+  }
 
-  void canFrameToMsg(const can::Frame* frame, Message* msg);
-  void msgToCanFrame(const Message* msg, can::Frame* frame);
-
-private:
-  std::string canbus_dev_;  // CANBUS interface
-  bool is_connected_;
-
-  std::thread can_msg_process_thread_;
-  std::queue<can::Frame> can_receive_queue_, can_send_queue_;
-  std::mutex receive_queue_mutex_, send_queue_mutex_;
-
-  can::ThreadedSocketCANInterfaceSharedPtr can_driver_;
-  can::FrameListenerConstSharedPtr msg_listener_;
-  can::StateListenerConstSharedPtr state_listener_;
-
-  void msgCallback(const can::Frame& msg);
-  void stateCallback(const can::State& state);
-  void sendFrame(const Message& msg);
+  uint32_t getApi() const
+  {
+    return id & (CAN_MSGID_FULL_M ^ CAN_MSGID_DEVNO_M);
+  }
 };
 
 }  // namespace puma_motor_driver
 
-#endif  // PUMA_MOTOR_DRIVER_SOCKETCAN_GATEWAY_H
+#endif  // PUMA_MOTOR_DRIVER_MESSAGE_H

@@ -23,10 +23,10 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 */
 
 #include <iostream>
-#include <socketcan_interface/make_shared.h>
 #include <string>
 
-#include "puma_motor_driver/socketcan_gateway.h"
+#include "clearpath_socketcan_interface/make_shared.hpp"
+#include "puma_motor_driver/socketcan_gateway.hpp"
 
 namespace puma_motor_driver
 {
@@ -48,12 +48,12 @@ SocketCANGateway::~SocketCANGateway()
 bool SocketCANGateway::connect()
 {
   msg_listener_ =
-      can_driver_->createMsgListener(can::CommInterface::FrameDelegate(this, &SocketCANGateway::msgCallback));
+      can_driver_->createMsgListenerM(this, &SocketCANGateway::msgCallback);
   state_listener_ =
-      can_driver_->createStateListener(can::StateInterface::StateDelegate(this, &SocketCANGateway::stateCallback));
+      can_driver_->createStateListenerM(this, &SocketCANGateway::stateCallback);
 
   std::cout << __PRETTY_FUNCTION__ << ": Trying to connect to " << canbus_dev_ << std::endl;
-  if (!can_driver_->init(canbus_dev_, false, can::NoSettings::create()))
+  if (!can_driver_->init(canbus_dev_, false))
   {
     this->stateCallback(can_driver_->getState());
     std::cerr << __PRETTY_FUNCTION__ << ": Failed to connect to " << canbus_dev_ << std::endl;

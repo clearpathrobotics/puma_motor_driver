@@ -21,40 +21,59 @@ OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTE
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef PUMA_MOTOR_DRIVER_GATEWAY_H
-#define PUMA_MOTOR_DRIVER_GATEWAY_H
 
-#include "puma_motor_driver/can_proto.h"
-#include "puma_motor_driver/message.h"
+#ifndef PUMA_MOTOR_DRIVER_SOCKETCAN_GATEWAY_H
+#define PUMA_MOTOR_DRIVER_SOCKETCAN_GATEWAY_H
 
-#include <stdint.h>
+#include <mutex>  // NOLINT(build/c++11)
+#include <string>
+#include <stdio.h>
+#include <queue>
+#include <thread>  // NOLINT(build/c++11)
+#include <unistd.h>
 
+#include "clearpath_socketcan_interface/socketcan.hpp"
+#include "clearpath_socketcan_interface/threading.hpp"
+
+#include "puma_motor_driver/gateway.hpp"
+#include "puma_motor_driver/message.hpp"
 
 namespace puma_motor_driver
 {
 
-class Gateway
+class SocketCANGateway : public Gateway
 {
 public:
-  virtual bool connect() = 0;
-  virtual bool isConnected() const = 0;
+  explicit SocketCANGateway(const std::string& canbus_dev);
+  ~SocketCANGateway();
 
-  // virtual void run() = 0;
+  bool connect() override;
+  bool isConnected() const override;
 
-  /**
-   * Queue specified message to be sent on the bus.
-   */
-  virtual void queue(const Message& msg) = 0;
+  void process();
+  bool recv(Message* msg) override;
+  void queue(const Message& msg) override;
 
-  /**
-   * Receive the next available message from the bus, blocking for
-   * timeout_millis if nonzero.
-   *
-   * \return True if a message was returned false if timeout occurred.
-   */
-  virtual bool recv(Message* msg) = 0;
+  void canFrameToMsg(const can::Frame* frame, Message* msg);
+  void msgToCanFrame(const Message* msg, can::Frame* frame);
+
+private:
+  std::string canbus_dev_;  // CANBUS interface
+  bool is_connected_;
+
+  std::thread can_msg_process_thread_;
+  std::queue<can::Frame> can_receive_queue_, can_send_queue_;
+  std::mutex receive_queue_mutex_, send_queue_mutex_;
+
+  can::ThreadedSocketCANInterfaceSharedPtr can_driver_;
+  can::FrameListenerConstSharedPtr msg_listener_;
+  can::StateListenerConstSharedPtr state_listener_;
+
+  void msgCallback(const can::Frame& msg);
+  void stateCallback(const can::State& state);
+  void sendFrame(const Message& msg);
 };
 
 }  // namespace puma_motor_driver
 
-#endif  // PUMA_MOTOR_DRIVER_GATEWAY_H
+#endif  // PUMA_MOTOR_DRIVER_SOCKETCAN_GATEWAY_H

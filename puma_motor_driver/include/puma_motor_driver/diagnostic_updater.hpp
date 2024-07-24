@@ -26,29 +26,28 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 
 #include <string>
 
-#include "ros/ros.h"
-#include "std_msgs/Bool.h"
-#include "diagnostic_updater/diagnostic_updater.h"
-#include "diagnostic_updater/publisher.h"
-#include "puma_motor_msgs/MultiStatus.h"
-#include "puma_motor_msgs/Status.h"
+#include "rclcpp/rclcpp.hpp"
+#include "std_msgs/msg/bool.hpp"
+#include "diagnostic_updater/diagnostic_updater.hpp"
+#include "diagnostic_updater/publisher.hpp"
+#include "puma_motor_msgs/msg/multi_status.hpp"
+#include "puma_motor_msgs/msg/status.hpp"
 
 namespace puma_motor_driver
 {
 
-class PumaMotorDriverDiagnosticUpdater : private diagnostic_updater::Updater
+class PumaMotorDriverDiagnosticUpdater : public rclcpp::Node, private diagnostic_updater::Updater
 {
 public:
-  PumaMotorDriverDiagnosticUpdater();
+  PumaMotorDriverDiagnosticUpdater(const std::string node_name);
 
   void driverDiagnostics(diagnostic_updater::DiagnosticStatusWrapper& stat, int driver);
 
-  void statusCallback(const puma_motor_msgs::MultiStatus::ConstPtr& status_msg);
+  void statusCallback(const puma_motor_msgs::msg::MultiStatus::SharedPtr status_msg);
 
 private:
-  ros::NodeHandle nh_;
-  ros::Subscriber status_sub_;
-  puma_motor_msgs::MultiStatus::ConstPtr last_status_;
+  rclcpp::Subscription<puma_motor_msgs::msg::MultiStatus>::SharedPtr status_sub_;
+  puma_motor_msgs::msg::MultiStatus::SharedPtr last_status_;
   bool initialized_;
 
   static const char* getFaultString(uint8_t fault);

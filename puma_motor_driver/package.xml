@@ -7,17 +7,18 @@
   <maintainer email="mpurvis@clearpathrobotics.com">Mike Purvis</maintainer>
   <license>BSD</license>
 
-  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
   <depend>diagnostic_updater</depend>
   <depend>puma_motor_msgs</depend>
-  <depend>roscpp</depend>
-  <depend>socketcan_interface</depend>
+  <depend>rclcpp</depend>
+  <depend>clearpath_socketcan_interface</depend>
   <depend>sensor_msgs</depend>
-  <depend>serial</depend>
+  <!-- <depend>serial_driver</depend> -->
 
   <exec_depend>can-utils</exec_depend>
   <exec_depend>joy</exec_depend>
 
-  <test_depend>roslaunch</test_depend>
-  <test_depend>roslint</test_depend>
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
 </package>
