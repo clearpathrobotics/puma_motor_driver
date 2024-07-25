@@ -1,0 +1,5 @@
+repositories:
+  puma_motor_driver:
+    type: git
+    url: https://github.com/clearpathrobotics/puma_motor_driver
+    version: foxy-devel
