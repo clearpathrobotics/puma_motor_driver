@@ -13,10 +13,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef SOCKETCAN_INTERFACE__MAKE_SHARED_HPP_
-#define SOCKETCAN_INTERFACE__MAKE_SHARED_HPP_
+#ifndef CLEARPATH_SOCKETCAN_INTERFACE__MAKE_SHARED_HPP_
+#define CLEARPATH_SOCKETCAN_INTERFACE__MAKE_SHARED_HPP_
 
 #include <memory>
 #define ROSCANOPEN_MAKE_SHARED std::make_shared
 
-#endif  // SOCKETCAN_INTERFACE__MAKE_SHARED_HPP_
+#endif  // CLEARPATH_SOCKETCAN_INTERFACE__MAKE_SHARED_HPP_

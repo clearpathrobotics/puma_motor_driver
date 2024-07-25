@@ -13,8 +13,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef SOCKETCAN_INTERFACE__LOGGING_HPP_
-#define SOCKETCAN_INTERFACE__LOGGING_HPP_
+#ifndef CLEARPATH_SOCKETCAN_INTERFACE__LOGGING_HPP_
+#define CLEARPATH_SOCKETCAN_INTERFACE__LOGGING_HPP_
 
 #include <console_bridge/console.h>
 
@@ -25,7 +25,6 @@
   { \
     std::stringstream sstr; \
     sstr << name << ": " << args; \
-    // console_bridge::getOutputHandler()->log(sstr.str(), level, file, line); \
   }
 
 #define ROSCANOPEN_ERROR(name, args) ROSCANOPEN_LOG( \
@@ -54,4 +53,4 @@ void roscanopen_log_deprecated(const std::string s, const char * f, int l)
     roscanopen_log_deprecated(sstr.str(), __FILE__, __LINE__); \
   }
 
-#endif  // SOCKETCAN_INTERFACE__LOGGING_HPP_
+#endif  // CLEARPATH_SOCKETCAN_INTERFACE__LOGGING_HPP_

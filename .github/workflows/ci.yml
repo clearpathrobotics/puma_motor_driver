@@ -39,10 +39,9 @@ jobs:
         with:
           target-ros2-distro: humble
           package-name: |
-            clearpath_diagnostics
-            clearpath_generator_robot
+            clearpath_socketcan_interface
             puma_motor_driver
-            clearpath_sensors
+            puma_motor_msgs
   puma_motor_driver_src_ci:
     name: Humble Clearpath Source
     runs-on: ubuntu-22.04
@@ -56,8 +55,7 @@ jobs:
         with:
           target-ros2-distro: humble
           package-name: |
-            clearpath_diagnostics
-            clearpath_generator_robot
+            clearpath_socketcan_interface
             puma_motor_driver
-            clearpath_sensors
+            puma_motor_msgs
           vcs-repo-file-url: dependencies.repos

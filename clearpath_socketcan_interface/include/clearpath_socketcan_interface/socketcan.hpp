@@ -13,10 +13,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef SOCKETCAN_INTERFACE__SOCKETCAN_HPP_
-#define SOCKETCAN_INTERFACE__SOCKETCAN_HPP_
-
-#include <boost/bind.hpp>
+#ifndef CLEARPATH_SOCKETCAN_INTERFACE__SOCKETCAN_HPP_
+#define CLEARPATH_SOCKETCAN_INTERFACE__SOCKETCAN_HPP_
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -29,6 +27,8 @@
 
 #include <string>
 #include <memory>
+
+#include <boost/bind.hpp>
 
 #include "clearpath_socketcan_interface/asio_base.hpp"
 #include "clearpath_socketcan_interface/dispatcher.hpp"
@@ -262,7 +262,7 @@ protected:
         input_.id = frame_.can_id & CAN_EFF_MASK;
         input_.is_error = 1;
 
-        //ROSCANOPEN_ERROR("socketcan_interface", "error: " << input_.id);
+        // ROSCANOPEN_ERROR("socketcan_interface", "error: " << input_.id);
         setInternalError(input_.id);
         setNotReady();
       } else {
@@ -291,4 +291,4 @@ using ThreadedSocketCANInterfaceSharedPtr = std::shared_ptr<ThreadedSocketCANInt
 
 }  // namespace can
 
-#endif  // SOCKETCAN_INTERFACE__SOCKETCAN_HPP_
+#endif  // CLEARPATH_SOCKETCAN_INTERFACE__SOCKETCAN_HPP_

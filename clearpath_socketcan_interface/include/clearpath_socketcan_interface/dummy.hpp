@@ -13,15 +13,15 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef SOCKETCAN_INTERFACE__DUMMY_HPP_
-#define SOCKETCAN_INTERFACE__DUMMY_HPP_
-
-#include <boost/algorithm/string.hpp>
+#ifndef CLEARPATH_SOCKETCAN_INTERFACE__DUMMY_HPP_
+#define CLEARPATH_SOCKETCAN_INTERFACE__DUMMY_HPP_
 
 #include <unordered_map>
 #include <string>
 #include <utility>
 #include <memory>
+
+#include <boost/algorithm/string.hpp>
 
 #include "clearpath_socketcan_interface/interface.hpp"
 #include "clearpath_socketcan_interface/dispatcher.hpp"
@@ -153,4 +153,4 @@ using DummyInterfaceSharedPtr = std::shared_ptr<DummyInterface>;
 
 }  // namespace can
 
-#endif  // SOCKETCAN_INTERFACE__DUMMY_HPP_
+#endif  // CLEARPATH_SOCKETCAN_INTERFACE__DUMMY_HPP_

@@ -13,17 +13,17 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef SOCKETCAN_INTERFACE__INTERFACE_HPP_
-#define SOCKETCAN_INTERFACE__INTERFACE_HPP_
-
-#include <boost/system/error_code.hpp>
-#include <boost/thread/mutex.hpp>
+#ifndef CLEARPATH_SOCKETCAN_INTERFACE__INTERFACE_HPP_
+#define CLEARPATH_SOCKETCAN_INTERFACE__INTERFACE_HPP_
 
 #include <iostream>
 #include <string>
 #include <array>
 #include <memory>
 #include <functional>
+
+#include <boost/system/error_code.hpp>
+#include <boost/thread/mutex.hpp>
 
 #include "clearpath_socketcan_interface/logging.hpp"
 
@@ -294,4 +294,4 @@ using DriverInterfaceSharedPtr = std::shared_ptr<DriverInterface>;
 
 }  // namespace can
 
-#endif  // SOCKETCAN_INTERFACE__INTERFACE_HPP_
+#endif  // CLEARPATH_SOCKETCAN_INTERFACE__INTERFACE_HPP_
