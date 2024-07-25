@@ -2,6 +2,28 @@
 Changelog for package puma_motor_driver
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Removed info logging
+* Restored commandSpeed
+* Spacing fixes
+* Updated topics to match API
+* Renamed socketcan_interface to clearpath_socket_interface
+* Topic in node namespace
+* Renamed robot to multi_puma_node
+* Fixed include
+* Add launch files and configuration files
+* Add new multi puma node
+* Modified header to include new functions
+* Removed launch files
+* Removed split multi control node
+* Add retrieval functions with received checks
+* properly using Boost shared library now
+* added -fPIC build option
+* exported header files
+* built in ROS Foxy without errors
+* Contributors: Joep Tool, Luis Camero, joe28965
+
 0.3.1 (2020-11-23)
 ------------------
 * [puma_motor_driver] Made socketcan_interface a depend rather than build_depend.
