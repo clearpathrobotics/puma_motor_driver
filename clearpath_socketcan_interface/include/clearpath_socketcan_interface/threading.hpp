@@ -13,13 +13,13 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef SOCKETCAN_INTERFACE__THREADING_HPP_
-#define SOCKETCAN_INTERFACE__THREADING_HPP_
-
-#include <boost/thread/thread.hpp>
+#ifndef CLEARPATH_SOCKETCAN_INTERFACE__THREADING_HPP_
+#define CLEARPATH_SOCKETCAN_INTERFACE__THREADING_HPP_
 
 #include <memory>
 #include <string>
+
+#include <boost/thread/thread.hpp>
 
 #include "clearpath_socketcan_interface/interface.hpp"
 
@@ -119,4 +119,4 @@ public:
 
 }  // namespace can
 
-#endif  // SOCKETCAN_INTERFACE__THREADING_HPP_
+#endif  // CLEARPATH_SOCKETCAN_INTERFACE__THREADING_HPP_

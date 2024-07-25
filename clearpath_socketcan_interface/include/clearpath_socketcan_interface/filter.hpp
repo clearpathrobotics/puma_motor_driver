@@ -13,8 +13,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef SOCKETCAN_INTERFACE__FILTER_HPP_
-#define SOCKETCAN_INTERFACE__FILTER_HPP_
+#ifndef CLEARPATH_SOCKETCAN_INTERFACE__FILTER_HPP_
+#define CLEARPATH_SOCKETCAN_INTERFACE__FILTER_HPP_
 
 #include <vector>
 #include <memory>
@@ -111,4 +111,4 @@ private:
 
 }  // namespace can
 
-#endif  // SOCKETCAN_INTERFACE__FILTER_HPP_
+#endif  // CLEARPATH_SOCKETCAN_INTERFACE__FILTER_HPP_

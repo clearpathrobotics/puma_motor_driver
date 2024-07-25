@@ -15,9 +15,9 @@
 
 #include <gtest/gtest.h>
 
-#include <clearpath_socketcan_interface/dispatcher.hpp>
-
 #include <vector>
+
+#include <clearpath_socketcan_interface/dispatcher.hpp>
 
 class Counter
 {

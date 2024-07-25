@@ -13,8 +13,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef SOCKETCAN_INTERFACE__STRING_HPP_
-#define SOCKETCAN_INTERFACE__STRING_HPP_
+#ifndef CLEARPATH_SOCKETCAN_INTERFACE__STRING_HPP_
+#define CLEARPATH_SOCKETCAN_INTERFACE__STRING_HPP_
 
 #include <sstream>
 #include <string>
@@ -66,4 +66,4 @@ std::ostream & operator<<(std::ostream & stream, const can::Header & h);
 std::ostream & operator<<(std::ostream & stream, const can::Frame & f);
 }  // namespace can
 
-#endif  // SOCKETCAN_INTERFACE__STRING_HPP_
+#endif  // CLEARPATH_SOCKETCAN_INTERFACE__STRING_HPP_

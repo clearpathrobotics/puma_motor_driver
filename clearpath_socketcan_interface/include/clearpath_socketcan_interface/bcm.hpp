@@ -13,8 +13,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef SOCKETCAN_INTERFACE__BCM_HPP_
-#define SOCKETCAN_INTERFACE__BCM_HPP_
+#ifndef CLEARPATH_SOCKETCAN_INTERFACE__BCM_HPP_
+#define CLEARPATH_SOCKETCAN_INTERFACE__BCM_HPP_
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -25,8 +25,9 @@
 #include <linux/can/bcm.h>
 #include <linux/can/error.h>
 
-#include <boost/chrono.hpp>
 #include <string>
+
+#include <boost/chrono.hpp>
 
 #include "clearpath_socketcan_interface/interface.hpp"
 
@@ -161,4 +162,4 @@ public:
 
 }  // namespace can
 
-#endif  // SOCKETCAN_INTERFACE__BCM_HPP_
+#endif  // CLEARPATH_SOCKETCAN_INTERFACE__BCM_HPP_

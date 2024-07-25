@@ -13,15 +13,15 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef SOCKETCAN_INTERFACE__DISPATCHER_HPP_
-#define SOCKETCAN_INTERFACE__DISPATCHER_HPP_
-
-#include <boost/thread/mutex.hpp>
+#ifndef CLEARPATH_SOCKETCAN_INTERFACE__DISPATCHER_HPP_
+#define CLEARPATH_SOCKETCAN_INTERFACE__DISPATCHER_HPP_
 
 #include <functional>
 #include <memory>
 #include <list>
 #include <unordered_map>
+
+#include <boost/thread/mutex.hpp>
 
 #include "clearpath_socketcan_interface/interface.hpp"
 
@@ -172,4 +172,4 @@ public:
 
 }  // namespace can
 
-#endif  // SOCKETCAN_INTERFACE__DISPATCHER_HPP_
+#endif  // CLEARPATH_SOCKETCAN_INTERFACE__DISPATCHER_HPP_
