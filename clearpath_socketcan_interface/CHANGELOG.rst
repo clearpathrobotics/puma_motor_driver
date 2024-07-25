@@ -2,8 +2,8 @@
 Changelog for package clearpath_socketcan_interface
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.0 (2024-07-25)
+------------------
 * Deleted the CHANGELOG
 * Version match to puma_motor_driver
 * Renamed socketcan_interface to clearpath_socket_interface

@@ -2,8 +2,8 @@
 Changelog for package puma_motor_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.0 (2024-07-25)
+------------------
 * updated msgs to foxy
 * Contributors: joe28965
 
