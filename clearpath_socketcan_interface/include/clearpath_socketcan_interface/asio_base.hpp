@@ -139,6 +139,7 @@ public:
   }
   virtual bool send(const Frame & msg)
   {
+    usleep(1000);
     return getState().driver_state == State::ready && enqueue(msg);
   }
 
