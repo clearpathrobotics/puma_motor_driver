@@ -2,8 +2,8 @@
 Changelog for package clearpath_socketcan_interface
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.1 (2024-10-09)
+------------------
 * Add 1ms wait
 * Added LICENSE per package.
 * Fix linting issues

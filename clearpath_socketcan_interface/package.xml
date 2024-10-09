@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>clearpath_socketcan_interface</name>
-  <version>1.0.0</version>
+  <version>1.0.1</version>
   <description>Clearpath's CAN interface description with helpers for filtering and driver implementation. Further a socketcan implementation based on boost::asio is included.</description>
 
   <maintainer email="lcamero@clearpathrobotics.com">Luis Camero</maintainer>

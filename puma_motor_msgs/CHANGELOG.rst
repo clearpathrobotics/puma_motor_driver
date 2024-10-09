@@ -2,8 +2,8 @@
 Changelog for package puma_motor_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.1 (2024-10-09)
+------------------
 * Added LICENSE per package.
 * Contributors: Tony Baltovski
 
