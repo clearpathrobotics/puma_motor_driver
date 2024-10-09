@@ -2,6 +2,11 @@
 Changelog for package puma_motor_driver
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Added LICENSE per package.
+* Contributors: Tony Baltovski
+
 1.0.0 (2024-07-25)
 ------------------
 * Removed info logging
