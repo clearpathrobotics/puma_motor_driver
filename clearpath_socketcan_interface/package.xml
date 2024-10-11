@@ -1,10 +1,12 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>clearpath_socketcan_interface</name>
-  <version>1.0.1</version>
+  <version>1.0.2</version>
   <description>Clearpath's CAN interface description with helpers for filtering and driver implementation. Further a socketcan implementation based on boost::asio is included.</description>
 
   <maintainer email="lcamero@clearpathrobotics.com">Luis Camero</maintainer>
+  <!-- Version 1.0.2 -->
+  <maintainer email="azmyin12@gmail.com">Azmyin Md. Kamal</maintainer>
 
   <license>LGPLv3</license>
 
@@ -13,6 +15,7 @@
 
   <author email="mathias.luedtke@ipa.fraunhofer.de">Mathias Lüdtke</author>
 
+  
   <buildtool_depend>ament_cmake_auto</buildtool_depend>
 
   <depend>boost</depend>

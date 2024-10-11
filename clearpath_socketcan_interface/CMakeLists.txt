@@ -1,9 +1,10 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.8)
 project(clearpath_socketcan_interface)
 
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
-  set(CMAKE_CXX_STANDARD 14)
+  #set(CMAKE_CXX_STANDARD 14)
+  set(CMAKE_CXX_STANDARD 17) # std::filesystems fails without C++ 17
 endif()
 
 find_package(ament_cmake REQUIRED)
